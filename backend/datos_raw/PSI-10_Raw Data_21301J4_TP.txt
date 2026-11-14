@@ -1,0 +1,32 @@
+
+Test Point: 21301J4
+
+Script start: 2021-10-29 00:41:40
+Script paused #1: 2021-10-29 00:41:50
+Script resumed #1: 2021-10-29 00:41:58
+Pre-ignition data: 2021-10-29 00:41:58
+Pre-ignition images: 2021-10-29 00:41:59
+Preheat igniter: ***
+MFCs on for priming: ***
+Ignition and retraction: 2021-10-29 00:42:34
+Flame stabilization #1: 2021-10-29 00:42:36
+Dilution of fuel and inert: ***
+Flame stabilization #2: 2021-10-29 00:42:36
+Ramp coflow to match test cond: ***
+Flame stabilization #3: ***
+Ramp to final velocity: ***
+Constant flow: 2021-10-29 00:42:44
+MFCs off: 2021-10-29 00:48:00
+Post-flame images: 2021-10-29 00:48:00
+Post-flame data: 2021-10-29 00:48:07
+Script complete: 2021-10-29 00:48:16
+Extinction detected: 2021-10-29 00:48:00
+Script paused #2: ***
+Script resumed #2: ***
+
+Camera    Archived   Start Image   End Image
+=======  ========   ==========  ==========
+IPSU1      	     ***	        ***	            ***
+IPSU2      	     ***	        ***	            ***
+ACME      	    8841	      2,289	          8,841
+Intensified	    8530	      2,828	          8,530
