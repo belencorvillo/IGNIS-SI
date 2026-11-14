@@ -18,9 +18,9 @@ export const GRAVITY_LEVELS = [
 
 /** 3D viewport modes. */
 export const VIEW_MODES = {
-  cabin: { id: 'cabin', label: 'Spacecraft Cabin (0g)', short: 'Cabin' },
-  habitat: { id: 'habitat', label: 'Planetary Habitat (1/6g – 3/8g)', short: 'Habitat' },
-  chamber: { id: 'chamber', label: 'Combustion Chamber Flame (CIR/MSG)', short: 'Flame' },
+  cabin: { id: 'cabin', label: 'Spacecraft Cabin', short: 'Cabin' },
+  habitat: { id: 'habitat', label: 'Planetary Habitat', short: 'Habitat' },
+  chamber: { id: 'chamber', label: 'Combustion Chamber Flame', short: 'Flame' },
 }
 
 // ── Mission presets and their justification ──────────────────────────────────
@@ -46,6 +46,7 @@ export const SOURCES = {
   },
   moonFacts: { label: 'NASA NSSDC Moon fact sheet', url: 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html' },
   marsFacts: { label: 'NASA NSSDC Mars fact sheet', url: 'https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html' },
+  psi10: { label: 'PSI-10 · ACME Flame Design', url: 'https://psi.nasa.gov/physci/repo/data/investigations/PSI-10' },
   psi159: { label: 'PSI-159 · ACME Cool Flames Investigation with Gases (catalog envelope)', url: 'https://psi.nasa.gov/physci/repo/data/investigations/PSI-159' },
 }
 
@@ -54,6 +55,16 @@ export const SOURCES = {
  * dialog; `notes` flags anything that is an assumption rather than a source.
  */
 export const MISSION_PRESETS = [
+  {
+    id: 'flame',
+    name: 'ISS air, fans off',
+    detail: '21% O₂ · 14.7 psi · 0g · still air',
+    params: { o2: 21, pressure: 14.7, airflow: 0, gravity: 0 },
+    mode: 'chamber',
+    why: 'Standard station air with no ventilation: the classic microgravity flame. Without buoyancy or airflow it burns as a slow, dim, blue sphere controlled only by diffusion, as studied by ACME Flame Design.',
+    sources: ['evaOps', 'psi10'],
+    notes: 'Starting point of the Flame view.',
+  },
   {
     id: 'iss',
     name: 'ISS cabin',
@@ -106,7 +117,21 @@ export const MISSION_PRESETS = [
   },
 ]
 
-export const DEFAULT_PARAMS = MISSION_PRESETS[0].params
+const byId = Object.fromEntries(MISSION_PRESETS.map((p) => [p.id, p]))
+export const presetById = (id) => byId[id]
+
+/** Conditions each scene starts with when selected. */
+export const SCENE_DEFAULTS = { chamber: 'flame', cabin: 'iss', habitat: 'mars' }
+
+/** Surface sites offered under the Habitat scene. */
+export const HABITAT_SITES = [
+  { value: 'lunar', label: 'Moon' },
+  { value: 'mars', label: 'Mars' },
+]
+
+/** The page opens on the Cabin scene with ISS cabin conditions. */
+export const DEFAULT_MODE = 'cabin'
+export const DEFAULT_PARAMS = byId.iss.params
 
 // ── Explainable match score ──────────────────────────────────────────────────
 /** Visible, deterministic weights (sum = 1). */
@@ -192,9 +217,22 @@ export function hazardLevel({ o2, pressure }) {
   return { level: 'nominal', label: 'Nominal', color: '#10B981' }
 }
 
-/** Deterministic rule-based advisory strings for the current conditions. */
-export function advisory({ o2, pressure, airflow, gravity }) {
+/** Lowest pressure (psi) any investigation in the catalog was tested at, or null. */
+export function minTestedPressure(investigations) {
+  const values = investigations.map((i) => i.envelope.pressure_min_psi).filter((v) => v != null)
+  return values.length ? Math.min(...values) : null
+}
+
+/**
+ * Deterministic rule-based watch-outs for the current conditions, most important first.
+ * `catalog.minPressure` comes from the active catalog, so the evidence-gap warning follows the data.
+ */
+export function advisory({ o2, pressure, airflow, gravity }, catalog = {}) {
   const out = []
+  if (gravity > 0 && gravity < 1)
+    out.push('No fire has been tested at lunar or Martian gravity. These results are bracketed by orbit (0g) and ground (1g) experiments, plus the PSI-22 electric-field proxy. LUCI and FM2 pending.')
+  if (catalog.minPressure != null && pressure < catalog.minPressure)
+    out.push(`No experiment in this catalog was tested below ${catalog.minPressure} psi, so every match at ${pressure.toFixed(1)} psi is extrapolated in pressure.`)
   if (o2 >= LUNAR_TARGET.o2MinPct)
     out.push(`O₂ ≥ ${LUNAR_TARGET.o2MinPct}%: exploration-atmosphere regime — material flammability screening must be performed at this O₂ level, not at 21%.`)
   if (o2 >= 70)
@@ -205,8 +243,6 @@ export function advisory({ o2, pressure, airflow, gravity }) {
     out.push('Quiescent 0g: no buoyant plume — smoke does not rise to ceiling detectors; detection relies on ventilation transport.')
   if (gravity === 0 && airflow >= 5)
     out.push('Forced ventilation in 0g sustains flames that would self-extinguish in still air — consider fan shutdown in fire response.')
-  if (gravity > 0 && gravity < 1)
-    out.push('Partial gravity: no direct flight data yet — results are bounded between 0g ISS data, 1g ground references and ACME E-FIELD proxies (PSI-22). LUCI and FM2 lunar data pending.')
   if (!out.length) out.push('Conditions resemble standard ISS cabin air; existing 0g fire-safety data apply directly.')
   return out
 }

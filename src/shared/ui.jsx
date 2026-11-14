@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Check, ChevronRight, Copy, ExternalLink, X } from 'lucide-react'
 import { citationFor, shortDoi } from './catalog'
 
@@ -200,6 +200,43 @@ export function SectionHead({ index, title, children, right }) {
         {children && <p className="measure mt-3 text-muted">{children}</p>}
       </div>
       {right}
+    </div>
+  )
+}
+
+/** Small anchored popover (closes on outside click or Escape). */
+export function Popover({ label, trigger, triggerClassName = '', align = 'right', className = 'w-[320px]', children }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const id = useId()
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false)
+    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    document.addEventListener('pointerdown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls={id} aria-label={label} className={triggerClassName}>
+        {trigger}
+      </button>
+      {open && (
+        <div
+          id={id}
+          role="dialog"
+          aria-label={label}
+          className={`rise absolute top-full z-30 mt-2 rounded-2xl border border-line-strong bg-surface p-5 text-left font-sans normal-case tracking-normal ${
+            align === 'right' ? 'right-0' : 'left-0'
+          } ${className}`}
+        >
+          {children}
+        </div>
+      )}
     </div>
   )
 }

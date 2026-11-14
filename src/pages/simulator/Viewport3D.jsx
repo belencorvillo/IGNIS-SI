@@ -277,15 +277,6 @@ function FlowField({ airflow, color = '#c9d6f2', box = [5, 3, 3] }) {
   )
 }
 
-function GravityArrow({ gravity }) {
-  const arrow = useMemo(() => new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(-2.9, 1.6, 0), 1, '#fc3d21', 0.14, 0.08), [])
-  useEffect(() => {
-    arrow.visible = gravity > 0
-    arrow.setLength(0.3 + gravity * 1.7, 0.14, 0.08)
-  }, [arrow, gravity])
-  return <primitive object={arrow} />
-}
-
 const CHAMBER_POSTS = [0, 1, 2, 3, 4, 5].map((i) => (i / 6) * Math.PI * 2)
 
 function ChamberScene({ params, zoom }) {
@@ -321,15 +312,36 @@ function ChamberScene({ params, zoom }) {
         <SootParticles params={params} />
       </group>
       <FlowField airflow={params.airflow} box={[5, 4, 4]} />
-      <GravityArrow gravity={params.gravity} />
-      <OrbitControls makeDefault enableDamping enableZoom={zoom} minDistance={4} maxDistance={16} enablePan={false} autoRotate autoRotateSpeed={0.35} />
+      <OrbitControls makeDefault enableDamping enableZoom={zoom} minDistance={4} maxDistance={18} enablePan={false} autoRotate autoRotateSpeed={0.35} />
     </>
   )
 }
 
 /* ═══════════════════════════ GLB-based scenes ═══════════════════════════ */
 
-const MOON_TERRAIN = new THREE.MeshStandardMaterial({ color: '#80858f', roughness: 1, metalness: 0 })
+// Surface look. The habitat GLB uses unlit, texture-baked materials, so lights
+// can't recolour it. Instead every material's texture is desaturated in the
+// shader (uSurfaceDesat = 1 on the Moon, 0 on Mars) towards a cool lunar grey.
+const SURFACE_UNIFORMS = { uSurfaceDesat: { value: 0 }, uSurfaceTint: { value: new THREE.Color('#c3c8d1') } }
+const DESAT_MAP_FRAGMENT = THREE.ShaderChunk.map_fragment.replace(
+  'diffuseColor *= sampledDiffuseColor;',
+  `float ignisLum = dot( sampledDiffuseColor.rgb, vec3( 0.299, 0.587, 0.114 ) );
+  sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, vec3( ignisLum ) * uSurfaceTint, uSurfaceDesat );
+  diffuseColor *= sampledDiffuseColor;`,
+)
+
+function patchSurfaceShader(material) {
+  if (material.userData.ignisSurfacePatched) return
+  material.userData.ignisSurfacePatched = true
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uSurfaceDesat = SURFACE_UNIFORMS.uSurfaceDesat
+    shader.uniforms.uSurfaceTint = SURFACE_UNIFORMS.uSurfaceTint
+    shader.fragmentShader =
+      `uniform float uSurfaceDesat;\nuniform vec3 uSurfaceTint;\n` + shader.fragmentShader.replace('#include <map_fragment>', DESAT_MAP_FRAGMENT)
+  }
+  material.customProgramCacheKey = () => 'ignis-surface'
+  material.needsUpdate = true
+}
 const MARS_TINT = new THREE.Color('#ffc890')
 const WHITE = new THREE.Color('#ffffff')
 const HAZARD_ORANGE = new THREE.Color('#ff5a1f')
@@ -395,19 +407,13 @@ function NormalizedModel({ url, size = 5, xray = false, focusCore = false, terra
     })
   }, [scene, xray, fit])
 
-  // Terrain tint: cool lit lunar regolith vs. dusty amber Martian soil.
+  // Surface look: grey lunar regolith (whole model desaturated) vs. warm Martian soil.
   useEffect(() => {
-    fit.terrainMeshes.forEach((mesh) => {
-      if (!mesh.userData.ignisOrigMaterial) mesh.userData.ignisOrigMaterial = mesh.material
-      const orig = mesh.userData.ignisOrigMaterial
-      if (terrain === 'moon') {
-        mesh.material = MOON_TERRAIN
-      } else {
-        mesh.material = orig
-        forEachMaterial(mesh, (m) => m.color?.copy(terrain === 'mars' ? MARS_TINT : WHITE))
-      }
-    })
-  }, [fit, terrain])
+    if (!terrain) return
+    scene.traverse((o) => o.isMesh && forEachMaterial(o, patchSurfaceShader))
+    SURFACE_UNIFORMS.uSurfaceDesat.value = terrain === 'moon' ? 1 : 0
+    fit.terrainMeshes.forEach((mesh) => forEachMaterial(mesh, (m) => m.color?.copy(terrain === 'mars' ? MARS_TINT : WHITE)))
+  }, [scene, fit, terrain])
 
   // Hazard glow: pulse module materials toward orange (works for lit and unlit materials).
   const glowOn = useRef(false)
@@ -441,6 +447,9 @@ function NormalizedModel({ url, size = 5, xray = false, focusCore = false, terra
     </group>
   )
 }
+
+/** Rotation (radians) that turns the command module's hatch window towards the camera. */
+const CABIN_YAW = 0.55
 
 const HAZARD_SPOTS = [
   [0.22, 0.08, 0.12],
@@ -480,11 +489,14 @@ function CabinScene({ params, xray, zoom }) {
       <hemisphereLight args={['#cfe3ff', '#1e293b', 1.1]} />
       <directionalLight position={[6, 8, 5]} intensity={2.2} />
       <directionalLight position={[-6, -2, -4]} intensity={0.6} color="#7aa3f5" />
-      <NormalizedModel url={MODEL_URLS.cabin} size={5} xray={xray} onFit={onFit} />
+      {/* Yaw only, so the hatch window faces the default camera; size and tilt unchanged. */}
+      <group rotation={[0, CABIN_YAW, 0]}>
+        <NormalizedModel url={MODEL_URLS.cabin} size={5} xray={xray} onFit={onFit} />
+      </group>
       <HazardMarkers dims={dims} color={hz.color} rate={rate} />
       <pointLight position={[0, 0, 0]} color={hz.color} intensity={hz.level === 'nominal' ? 2 : 12} distance={6} />
       <FlowField airflow={params.airflow} color="#7aa3f5" box={[dims[0] * 0.8, dims[1] * 0.5, dims[2] * 0.5]} />
-      <OrbitControls makeDefault enableDamping enableZoom={zoom} minDistance={1.5} maxDistance={14} enablePan={false} />
+      <OrbitControls makeDefault enableDamping enableZoom={zoom} minDistance={1.5} maxDistance={16} enablePan={false} />
     </>
   )
 }
@@ -495,15 +507,17 @@ const SURFACE = {
 }
 
 function HabitatHazardOverlay({ dims }) {
+  // Outline only: a filled box would tint the whole surface orange.
   const ref = useRef()
   useFrame((state) => {
-    if (ref.current) ref.current.material.opacity = 0.12 + 0.18 * (0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 3))
+    const line = ref.current?.children[0]
+    if (line?.material) line.material.opacity = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 3))
   })
   return (
     <mesh ref={ref} scale={[dims[0] * 1.08, dims[1] * 1.12, dims[2] * 1.08]}>
       <boxGeometry />
-      <meshBasicMaterial color="#ff6a1a" transparent depthWrite={false} blending={THREE.AdditiveBlending} />
-      <Edges color="#ff8c42" />
+      <meshBasicMaterial visible={false} />
+      <Edges color="#ff8c42" transparent />
     </mesh>
   )
 }
@@ -569,8 +583,8 @@ class SceneErrorBoundary extends Component {
 
 /** Full-bleed 3D stage. Overlays (HUD, controls) are composed by the parent. */
 const CAMERAS = {
-  chamber: { position: [6, 1.8, 8.5], fov: 40 },
-  cabin: { position: [4.6, 2.6, 5.4], fov: 45 },
+  chamber: { position: [6.6, 2, 9.6], fov: 40 },
+  cabin: { position: [5.6, 3, 6.6], fov: 45 },
   habitat: { position: [3.2, 1.6, 4.2], fov: 45 },
 }
 
