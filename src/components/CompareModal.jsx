@@ -3,9 +3,17 @@ import { Badge, CitationBlock, Modal, PsiIdTag } from './ui'
 import { MediaPanel } from './InvestigationDetail'
 import { FUEL_PHASE_LABELS, RACK_LABELS, envelopeSummary, GRAVITY_REGIME_LABELS } from '../data/investigations'
 
+const EMPTY = '—'
+const list = (arr) => (arr.length ? [...arr].sort().join(', ') : EMPTY)
+
+// Rows whose values are empty for every selected investigation are hidden
+// (e.g. objectives/approach are optional and absent from catalogo_limpio.json).
 const ROWS = [
-  { key: 'objectives', label: 'Objectives', get: (i) => i.objectives || '—', long: true },
-  { key: 'approach', label: 'Approach', get: (i) => i.approach || '—', long: true },
+  { key: 'objectives', label: 'Objectives', get: (i) => i.objectives || EMPTY, long: true },
+  { key: 'approach', label: 'Approach', get: (i) => i.approach || EMPTY, long: true },
+  { key: 'findings', label: 'Key findings (SI-Assisted)', get: (i) => i.key_findings_summary || EMPTY, long: true },
+  { key: 'fuels', label: 'Fuels tested', get: (i) => list(i.fuels_tested) },
+  { key: 'sensors', label: 'Sensors', get: (i) => list(i.sensors_used) },
   { key: 'project_type', label: 'Project type', get: (i) => i.project_type },
   { key: 'hardware', label: 'Hardware', get: (i) => RACK_LABELS[i.hardware_rack] },
   { key: 'fuel', label: 'Fuel phase', get: (i) => FUEL_PHASE_LABELS[i.fuel_phase] },
@@ -15,7 +23,7 @@ const ROWS = [
   { key: 'airflow', label: 'Airflow range', get: (i) => envelopeSummary(i.envelope).airflow },
   { key: 'gravity', label: 'Gravity regime', get: (i) => GRAVITY_REGIME_LABELS[i.envelope.gravity_regime] },
   { key: 'lunar', label: 'Lunar-relevant', get: (i) => (i.lunar_habitat_relevant ? 'Yes' : 'No') },
-  { key: 'related', label: 'Related PSI IDs', get: (i) => (i.related_psi_ids.length ? i.related_psi_ids.join(', ') : '—') },
+  { key: 'related', label: 'Related PSI IDs', get: (i) => list(i.related_psi_ids) },
 ]
 
 function Matrix({ rows, items, tone }) {
@@ -74,6 +82,7 @@ export default function CompareModal({ open, onClose, items }) {
   const same = []
   for (const r of ROWS) {
     const values = new Set(items.map((i) => r.get(i)))
+    if (values.size === 1 && values.has(EMPTY)) continue
     ;(values.size > 1 ? changed : same).push(r)
   }
   const links = crossLinks(items)
