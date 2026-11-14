@@ -1,0 +1,29 @@
+﻿# Entornos y dependencias
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+.next/
+dist/
+.env
+.env.local
+
+# Archivos pesados de NASA PSI y Vídeos (NO subir a Git)
+*.mp4
+*.avi
+*.mov
+*.nef
+*.csv
+*.xlsx
+*.zip
+data-pipeline/raw_downloads/
+cv-engine/raw_videos/
+frontend/public/videos/
+
+# Bases de datos locales generadas
+*.duckdb
+*.db
+qdrant_storage/
+runs/
+*.pt
