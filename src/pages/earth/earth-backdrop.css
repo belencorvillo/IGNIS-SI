@@ -1,0 +1,28 @@
+/* ── IGNIS · decorative 3D Earth behind the On Earth header ─────────────── */
+
+.earth-backdrop {
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+}
+
+.earth-globe {
+  --size: 820px;
+  width: var(--size);
+  height: var(--size);
+}
+
+/* Soft blue glow around the planet (sits behind the 3D canvas). */
+.earth-glow {
+  position: absolute;
+  inset: 4%;
+  border-radius: 9999px;
+  box-shadow:
+    0 0 80px 10px rgb(122 163 245 / 0.18),
+    0 0 220px 60px rgb(122 163 245 / 0.07);
+}
+
+@media (max-width: 767px) {
+  .earth-globe {
+    --size: 520px;
+  }
+}
