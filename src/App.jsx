@@ -4,11 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import SimulatorPage from './pages/simulator/SimulatorPage'
 import LibraryPage from './pages/library/LibraryPage'
 import EarthPage from './pages/earth/EarthPage'
+import AboutPage from './pages/about/AboutPage'
 import CiteModal from './shared/CiteModal'
 import InvestigationDetail from './shared/InvestigationDetail'
 import { Button } from './shared/ui'
 import { SOURCE_LABELS, loadInvestigations } from './shared/catalog'
-import { DEFAULT_PARAMS } from './pages/simulator/simulation'
+import { MODEL_CREDITS } from './shared/credits'
+import { DEFAULT_MODE, DEFAULT_PARAMS } from './pages/simulator/simulation'
 
 const PAGES = [
   { id: 'simulator', label: 'Simulator' },
@@ -25,7 +27,7 @@ function Wordmark() {
         <ellipse cx="11" cy="11" rx="10" ry="3.6" fill="none" stroke="currentColor" strokeOpacity="0.35" transform="rotate(-24 11 11)" />
         <circle cx="11" cy="11" r="3.4" fill="#fc3d21" />
       </svg>
-      <span className="font-display text-[17px] font-semibold tracking-tight">Ignis</span>
+      <span className="whitespace-nowrap font-display text-[17px] font-semibold tracking-tight">IGNIS-SI</span>
     </span>
   )
 }
@@ -34,7 +36,7 @@ export default function App() {
   const [page, setPage] = useState('simulator')
   const [data, setData] = useState({ investigations: [], source: null, loading: true })
   const [params, setParams] = useState(DEFAULT_PARAMS)
-  const [mode, setMode] = useState('chamber')
+  const [mode, setMode] = useState(DEFAULT_MODE)
   const [detail, setDetail] = useState(null)
   const [citeOpen, setCiteOpen] = useState(false)
 
@@ -65,7 +67,7 @@ export default function App() {
 
       <header className="fixed inset-x-0 top-0 z-40 h-16 border-b border-line bg-ground">
         <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between gap-4 px-4 md:px-8">
-          <button type="button" onClick={() => go('simulator')} aria-label="Ignis home" className="rounded-full">
+          <button type="button" onClick={() => go('simulator')} aria-label="IGNIS-SI home" className="rounded-full">
             <Wordmark />
           </button>
           <nav aria-label="Main" className="flex items-center gap-1">
@@ -84,22 +86,31 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <span className="hidden sm:block">
+          <div className="hidden items-center gap-1 sm:flex">
             <Button variant="secondary" className="h-9 px-4 text-[14px]" onClick={() => setCiteOpen(true)} disabled={!investigations.length}>
               Cite data
             </Button>
-          </span>
+            <button
+              type="button"
+              onClick={() => go('about')}
+              aria-current={page === 'about' ? 'page' : undefined}
+              className={`h-9 whitespace-nowrap rounded-full px-4 text-[14px] transition-colors duration-150 ${page === 'about' ? 'text-ink' : 'text-faint hover:text-ink'}`}
+            >
+              About us
+            </button>
+          </div>
         </div>
       </header>
 
       <main id="main" className="pt-16">
-        {data.loading && <div className="label flex h-[60vh] items-center justify-center">Loading PSI catalog…</div>}
-        {!data.loading && !investigations.length && (
+        {page === 'about' && <AboutPage />}
+        {page !== 'about' && data.loading && <div className="label flex h-[60vh] items-center justify-center">Loading PSI catalog…</div>}
+        {page !== 'about' && !data.loading && !investigations.length && (
           <div className="mx-auto max-w-xl px-6 py-32 text-center text-muted">
             No investigations could be loaded. Check the backend, catalogo_limpio.json or mock_catalogo.json.
           </div>
         )}
-        {!data.loading && investigations.length > 0 && (
+        {page !== 'about' && !data.loading && investigations.length > 0 && (
           <>
             {page === 'simulator' && (
               <SimulatorPage
@@ -126,6 +137,26 @@ export default function App() {
             Data from NASA Physical Sciences Informatics (PSI). Content marked “SI-assisted analysis” was produced with Space Intelligence assistance.
             Built for NASA Space Apps 2026 — not an official NASA product.
           </p>
+          <p className="measure text-[13px] text-faint md:col-span-2">
+            3D models:{' '}
+            {[MODEL_CREDITS.cabin, MODEL_CREDITS.habitat].map((c, i) => (
+              <span key={c.url}>
+                {i > 0 && ' · '}
+                <a href={c.url} target="_blank" rel="noreferrer" className="link text-faint">
+                  {c.title}
+                </a>{' '}
+                by{' '}
+                <a href={c.authorUrl} target="_blank" rel="noreferrer" className="link text-faint">
+                  {c.author}
+                </a>{' '}
+                (
+                <a href={c.licenseUrl} target="_blank" rel="noreferrer" className="link text-faint">
+                  {c.license}
+                </a>
+                {c.modified ? ', modified' : ''})
+              </span>
+            ))}
+          </p>
           <div className="flex flex-col items-start gap-2 md:items-end">
             {src && (
               <span className="label flex items-center gap-2" title={src.detail}>
@@ -135,6 +166,9 @@ export default function App() {
             )}
             <button type="button" onClick={() => setCiteOpen(true)} className="link text-[14px] sm:hidden">
               Cite data
+            </button>
+            <button type="button" onClick={() => go('about')} className="link text-[14px] sm:hidden">
+              About us
             </button>
           </div>
         </div>

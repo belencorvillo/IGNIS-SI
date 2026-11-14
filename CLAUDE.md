@@ -15,6 +15,6 @@
 - **Scientific Scope:** Explicitly note that rocket engines and propellants are excluded because high flow velocities render combustion gravity-independent.
 
 ## 3. Core Domain Constants
-- **Lunar Base / Pressurized Rover Target:** O2 >= 30% and Pressure <= 10.2 psi (vs. Earth 21% O2, 14.7 psi; EVA suit 100% O2, 4.3 psi).
+- **Exploration-Atmosphere Flag (Lunar Base / Pressurized Rover):** raised when O2 >= 30% **or** Pressure <= 10.2 psi — either condition takes a cabin out of the Earth-normal regime (21% O2, 14.7 psi). NASA's recommended exploration atmosphere is 34% O2 at 8.2 psi; EVA suit is 100% O2 at 4.3 psi. Implemented as `isLunarZone()` in `src/shared/catalog.js`.
 - **Hardware Racks:** CIR (ACME gaseous flames, MDCA liquid droplets) and MSG (SPICE forced-flow duct).
 - **Partial Gravity:** Bounded via 0g ISS data, 1g ground references, and ACME E-FIELD electric-field proxies (awaiting LUCI and FM2).
