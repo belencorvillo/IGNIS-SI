@@ -3,22 +3,62 @@ import { X } from 'lucide-react'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Citation, Drawer, IconButton, More, PsiId, SITag, Tag } from './ui'
 import { FUEL_PHASE_LABELS, RACK_LABELS, envelopeSummary, loadTelemetry } from './catalog'
+import { getYoloVideo } from './yoloVideos'
 
-/** Video / CV telemetry preview. Shows telemetry curves from contracts/data/cv_telemetry when available. */
+/** Video / CV telemetry preview. Shows YOLO processed media and telemetry curves when available. */
 export function MediaPanel({ inv }) {
   const [telemetry, setTelemetry] = useState(null)
   const [videoOk, setVideoOk] = useState(true)
+  const yoloMedia = getYoloVideo(inv?.psi_id)
+
   useEffect(() => {
     let alive = true
+    setVideoOk(true)
     loadTelemetry(inv).then((t) => alive && setTelemetry(t))
     return () => {
       alive = false
     }
   }, [inv])
 
-  if (!inv.video_filename && !telemetry) return <p className="text-[14px] text-faint">No video or CV telemetry yet.</p>
+  if (!yoloMedia && !inv.video_filename && !telemetry) {
+    return <p className="text-[14px] text-faint">No video or CV telemetry yet.</p>
+  }
+
   return (
     <div className="space-y-4">
+      {yoloMedia && (
+        <div className="overflow-hidden rounded-2xl border border-line-strong bg-[#07080b]">
+          <div className="flex items-center justify-between gap-2 border-b border-line px-3.5 py-2 text-[12px]">
+            <span className="truncate font-medium text-ink">{yoloMedia.title}</span>
+            {yoloMedia.model && (
+              <span className="shrink-0 rounded-full border border-[#fc3d21]/40 bg-[#fc3d21]/10 px-2 py-0.5 font-mono text-[11px] text-[#fc3d21]">
+                {yoloMedia.model}
+              </span>
+            )}
+          </div>
+
+          {yoloMedia.isImage ? (
+            <a href={yoloMedia.src} target="_blank" rel="noreferrer" title="Open full-size image">
+              <img
+                src={yoloMedia.src}
+                alt={yoloMedia.title}
+                className="max-h-[460px] w-full bg-black object-contain"
+              />
+            </a>
+          ) : (
+            <video
+              src={yoloMedia.src}
+              controls
+              playsInline
+              preload="metadata"
+              className="aspect-video w-full bg-black object-contain"
+            >
+              Tu navegador no soporta la reproducción de vídeo HTML5.
+            </video>
+          )}
+        </div>
+      )}
+
       {inv.video_filename &&
         (videoOk ? (
           <video
@@ -35,6 +75,7 @@ export function MediaPanel({ inv }) {
             Video not published yet · <span className="num">{inv.video_filename}</span>
           </p>
         ))}
+
       {telemetry && (
         <div>
           <div className="mb-2">
