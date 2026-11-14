@@ -1,103 +1,108 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BookMarked, Database, Flame, Globe2, Loader2, Telescope, Orbit } from 'lucide-react'
-import MissionSimulator from './components/MissionSimulator'
-import Explorer from './components/Explorer'
-import Spinoffs from './components/Spinoffs'
-import CompareModal from './components/CompareModal'
-import CiteModal from './components/CiteModal'
-import InvestigationDetail from './components/InvestigationDetail'
-import { Badge, ScopeNote } from './components/ui'
-import { DEFAULT_PARAMS, SOURCE_LABELS, loadInvestigations } from './data/investigations'
+// App shell: header, navigation, footer and state shared across pages.
+// Each tab lives in its own folder under src/pages/ — see src/README.md.
+import { useCallback, useEffect, useState } from 'react'
+import SimulatorPage from './pages/simulator/SimulatorPage'
+import LibraryPage from './pages/library/LibraryPage'
+import EarthPage from './pages/earth/EarthPage'
+import CiteModal from './shared/CiteModal'
+import InvestigationDetail from './shared/InvestigationDetail'
+import { Button } from './shared/ui'
+import { SOURCE_LABELS, loadInvestigations } from './shared/catalog'
+import { DEFAULT_PARAMS } from './pages/simulator/simulation'
 
-const TABS = [
-  { id: 'simulator', label: 'Mission Simulator', Icon: Orbit },
-  { id: 'explorer', label: 'SI Explorer', Icon: Telescope },
-  { id: 'spinoffs', label: 'Earth Fire Safety Spin-offs', Icon: Globe2 },
+const PAGES = [
+  { id: 'simulator', label: 'Simulator' },
+  { id: 'library', label: 'Library' },
+  { id: 'earth', label: 'On Earth' },
 ]
 
+function Wordmark() {
+  // Project wordmark only — no NASA insignia, logotype or mission patches.
+  return (
+    <span className="flex items-center gap-2.5">
+      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
+        <circle cx="11" cy="11" r="10" fill="none" stroke="currentColor" strokeOpacity="0.35" />
+        <ellipse cx="11" cy="11" rx="10" ry="3.6" fill="none" stroke="currentColor" strokeOpacity="0.35" transform="rotate(-24 11 11)" />
+        <circle cx="11" cy="11" r="3.4" fill="#fc3d21" />
+      </svg>
+      <span className="font-display text-[17px] font-semibold tracking-tight">Ignis</span>
+    </span>
+  )
+}
+
 export default function App() {
-  const [tab, setTab] = useState('simulator')
-  const [data, setData] = useState({ investigations: [], source: null, loading: true, error: null })
+  const [page, setPage] = useState('simulator')
+  const [data, setData] = useState({ investigations: [], source: null, loading: true })
   const [params, setParams] = useState(DEFAULT_PARAMS)
-  const [mode, setMode] = useState('cabin')
+  const [mode, setMode] = useState('chamber')
   const [detail, setDetail] = useState(null)
-  const [compareIds, setCompareIds] = useState(null)
   const [citeOpen, setCiteOpen] = useState(false)
 
   useEffect(() => {
     let alive = true
     loadInvestigations()
-      .then((r) => alive && setData({ ...r, loading: false, error: null }))
-      .catch((error) => alive && setData({ investigations: [], source: null, loading: false, error }))
+      .then((r) => alive && setData({ ...r, loading: false }))
+      .catch(() => alive && setData({ investigations: [], source: null, loading: false }))
     return () => {
       alive = false
     }
   }, [])
 
   const { investigations, source } = data
-  const compareItems = useMemo(
-    () => (compareIds ? compareIds.map((id) => investigations.find((i) => i.psi_id === id)).filter(Boolean) : []),
-    [compareIds, investigations],
-  )
   const closeDetail = useCallback(() => setDetail(null), [])
+  const closeCite = useCallback(() => setCiteOpen(false), [])
+  const go = (id) => {
+    setPage(id)
+    window.scrollTo({ top: 0 })
+  }
   const src = SOURCE_LABELS[source]
 
   return (
-    <div className="grid-bg flex min-h-screen flex-col bg-[#050811]">
-      <header className="sticky top-0 z-30 border-b border-cyan-500/15 bg-[#050811]/90 backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
-          <div className="flex items-center gap-2.5">
-            <span className="rounded-lg bg-gradient-to-br from-orange-500 to-cyan-500 p-1.5">
-              <Flame size={18} className="text-white" />
-            </span>
-            <div>
-              <div className="heading-font text-base font-bold tracking-wide text-white">IGNIS-SI</div>
-              <div className="text-[10px] text-slate-400">Flame in Freefall · SI-powered fire safety insights from microgravity combustion</div>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {src && (
-              <Badge tone={src.tone} title={src.detail}>
-                <Database size={11} /> {src.label}
-              </Badge>
-            )}
-            <button
-              onClick={() => setCiteOpen(true)}
-              disabled={!investigations.length}
-              className="flex items-center gap-1.5 rounded-lg border border-cyan-400/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-400/10 disabled:opacity-50"
-            >
-              <BookMarked size={14} /> Cite Active Datasets (DOIs)
-            </button>
-          </div>
+    <div className="grain min-h-screen">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-ground">
+        Skip to content
+      </a>
+
+      <header className="fixed inset-x-0 top-0 z-40 h-16 border-b border-line bg-ground">
+        <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between gap-4 px-4 md:px-8">
+          <button type="button" onClick={() => go('simulator')} aria-label="Ignis home" className="rounded-full">
+            <Wordmark />
+          </button>
+          <nav aria-label="Main" className="flex items-center gap-1">
+            {PAGES.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => go(p.id)}
+                aria-current={page === p.id ? 'page' : undefined}
+                className={`h-10 whitespace-nowrap rounded-full px-2.5 text-[14px] transition-colors duration-150 sm:text-[15px] md:px-4 ${
+                  page === p.id ? 'text-ink' : 'text-faint hover:text-ink'
+                }`}
+              >
+                {p.label}
+                <span className={`mx-auto mt-0.5 block h-px w-4 transition-colors ${page === p.id ? 'bg-nasa-red' : 'bg-transparent'}`} aria-hidden="true" />
+              </button>
+            ))}
+          </nav>
+          <span className="hidden sm:block">
+            <Button variant="secondary" className="h-9 px-4 text-[14px]" onClick={() => setCiteOpen(true)} disabled={!investigations.length}>
+              Cite data
+            </Button>
+          </span>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-4" aria-label="Main views">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`nav-tab flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm ${tab === t.id ? 'active' : 'text-slate-400 hover:text-slate-200'}`}
-            >
-              <t.Icon size={15} /> {t.label}
-            </button>
-          ))}
-        </nav>
       </header>
 
-      <main className="flex-1">
-        {data.loading && (
-          <div className="flex items-center justify-center gap-2 p-16 text-sm text-slate-400">
-            <Loader2 size={16} className="animate-spin" /> Loading PSI catalog…
-          </div>
-        )}
+      <main id="main" className="pt-16">
+        {data.loading && <div className="label flex h-[60vh] items-center justify-center">Loading PSI catalog…</div>}
         {!data.loading && !investigations.length && (
-          <div className="glass-panel m-4 p-8 text-center text-sm text-amber-300">
-            No investigations could be loaded from the backend, catalogo_limpio.json or mock_catalogo.json.
+          <div className="mx-auto max-w-xl px-6 py-32 text-center text-muted">
+            No investigations could be loaded. Check the backend, catalogo_limpio.json or mock_catalogo.json.
           </div>
         )}
         {!data.loading && investigations.length > 0 && (
           <>
-            {tab === 'simulator' && (
-              <MissionSimulator
+            {page === 'simulator' && (
+              <SimulatorPage
                 investigations={investigations}
                 params={params}
                 setParams={setParams}
@@ -106,25 +111,37 @@ export default function App() {
                 onOpenDetail={setDetail}
               />
             )}
-            {tab === 'explorer' && <Explorer investigations={investigations} onOpenDetail={setDetail} onCompare={setCompareIds} />}
-            {tab === 'spinoffs' && <Spinoffs investigations={investigations} onOpenDetail={setDetail} />}
+            {page === 'library' && <LibraryPage investigations={investigations} onOpenDetail={setDetail} />}
+            {page === 'earth' && <EarthPage investigations={investigations} onOpenDetail={setDetail} />}
           </>
         )}
       </main>
 
-      <footer className="border-t border-cyan-500/10 bg-[#050811]/90 px-4 py-3">
-        <ScopeNote className="mx-auto max-w-5xl text-center" />
-        <p className="mx-auto mt-1 max-w-5xl text-center text-[10px] text-slate-500">
-          Data: NASA Physical Sciences Informatics (PSI). Each investigation shows its PSI ID and citation. Content marked “SI-Assisted Analysis”
-          was produced with Space Intelligence assistance. NASA Space Apps Challenge 2026 project — not an official NASA product.
-        </p>
+      <footer className="border-t border-line">
+        <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-12 md:grid-cols-[1fr_1fr_auto] md:px-8">
+          <p className="measure text-[14px] text-muted">
+            Rocket engines and propellants are out of scope: their high flow velocities make combustion effectively gravity-independent.
+          </p>
+          <p className="measure text-[14px] text-muted">
+            Data from NASA Physical Sciences Informatics (PSI). Content marked “SI-assisted analysis” was produced with Space Intelligence assistance.
+            Built for NASA Space Apps 2026 — not an official NASA product.
+          </p>
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            {src && (
+              <span className="label flex items-center gap-2" title={src.detail}>
+                <span className={`h-1.5 w-1.5 rounded-full ${source === 'mock' ? 'bg-ember' : 'bg-sky'}`} aria-hidden="true" />
+                {src.label} · {investigations.length} investigations
+              </span>
+            )}
+            <button type="button" onClick={() => setCiteOpen(true)} className="link text-[14px] sm:hidden">
+              Cite data
+            </button>
+          </div>
+        </div>
       </footer>
 
-      {detail && (
-        <InvestigationDetail inv={detail} catalog={investigations} onClose={closeDetail} onOpen={setDetail} />
-      )}
-      <CompareModal open={compareItems.length >= 2} onClose={() => setCompareIds(null)} items={compareItems} />
-      <CiteModal open={citeOpen} onClose={() => setCiteOpen(false)} investigations={investigations} source={source} />
+      {detail && <InvestigationDetail inv={detail} catalog={investigations} onClose={closeDetail} onOpen={setDetail} />}
+      <CiteModal open={citeOpen} onClose={closeCite} investigations={investigations} source={source} />
     </div>
   )
 }

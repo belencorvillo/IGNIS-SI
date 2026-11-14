@@ -2,8 +2,8 @@ import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, 
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Center, Edges, Html, OrbitControls, Sparkles, Stars, useGLTF, useProgress } from '@react-three/drei'
 import * as THREE from 'three'
-import { Box, Flame, Rocket, ScanEye, TriangleAlert } from 'lucide-react'
-import { VIEW_MODES, flameRegime, hazardLevel, isLunarZone, LUNAR_TARGET } from '../data/investigations'
+import { isLunarZone } from '../../shared/catalog'
+import { hazardLevel } from './simulation'
 
 const MODEL_URLS = {
   cabin: '/models/command_module.glb',
@@ -246,9 +246,9 @@ function SootParticles({ params }) {
   )
 }
 
-const FLOW_ARROWS = 28
+const FLOW_ARROWS = 16
 
-function FlowField({ airflow, color = '#38bdf8', box = [5, 3, 3] }) {
+function FlowField({ airflow, color = '#c9d6f2', box = [5, 3, 3] }) {
   const ref = useRef()
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const seeds = useMemo(
@@ -271,52 +271,58 @@ function FlowField({ airflow, color = '#38bdf8', box = [5, 3, 3] }) {
   })
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, FLOW_ARROWS]} frustumCulled={false}>
-      <coneGeometry args={[0.04, 0.18, 8]} />
-      <meshBasicMaterial color={color} transparent opacity={0.55} />
+      <coneGeometry args={[0.025, 0.12, 6]} />
+      <meshBasicMaterial color={color} transparent opacity={0.35} />
     </instancedMesh>
   )
 }
 
 function GravityArrow({ gravity }) {
-  const arrow = useMemo(() => new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(-2.9, 1.6, 0), 1, '#f472b6', 0.18, 0.12), [])
+  const arrow = useMemo(() => new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(-2.9, 1.6, 0), 1, '#fc3d21', 0.14, 0.08), [])
   useEffect(() => {
     arrow.visible = gravity > 0
-    arrow.setLength(0.3 + gravity * 1.7, 0.18, 0.12)
+    arrow.setLength(0.3 + gravity * 1.7, 0.14, 0.08)
   }, [arrow, gravity])
   return <primitive object={arrow} />
 }
 
-function ChamberScene({ params }) {
+const CHAMBER_POSTS = [0, 1, 2, 3, 4, 5].map((i) => (i / 6) * Math.PI * 2)
+
+function ChamberScene({ params, zoom }) {
+  // Transparent background so the page's orbit lines read through.
   return (
     <>
-      <color attach="background" args={['#04070f']} />
       <ambientLight intensity={0.25} />
-      <Stars radius={60} depth={30} count={1500} factor={2} fade speed={0.4} />
-      {/* Wireframe test chamber */}
-      <mesh>
-        <cylinderGeometry args={[2.6, 2.6, 5.2, 36, 6, true]} />
-        <meshBasicMaterial color="#38bdf8" wireframe transparent opacity={0.12} />
-      </mesh>
-      {[-2.6, 2.6].map((y) => (
+      <Stars radius={60} depth={30} count={900} factor={2} fade speed={0.3} />
+      {/* Minimal test chamber: two rings + six hairline posts */}
+      {[-2.4, 2.4].map((y) => (
         <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[2.6, 0.03, 8, 64]} />
-          <meshBasicMaterial color="#38bdf8" transparent opacity={0.5} />
+          <torusGeometry args={[2.6, 0.008, 6, 128]} />
+          <meshBasicMaterial color="#f2efe9" transparent opacity={0.28} />
+        </mesh>
+      ))}
+      {CHAMBER_POSTS.map((a) => (
+        <mesh key={a} position={[Math.cos(a) * 2.6, 0, Math.sin(a) * 2.6]}>
+          <cylinderGeometry args={[0.006, 0.006, 4.8, 4]} />
+          <meshBasicMaterial color="#f2efe9" transparent opacity={0.12} />
         </mesh>
       ))}
       {/* Porous spherical burner + fuel feed (ACME-style) */}
       <mesh>
-        <sphereGeometry args={[0.13, 24, 16]} />
+        <sphereGeometry args={[0.1, 24, 16]} />
         <meshStandardMaterial color="#9ca3af" metalness={0.6} roughness={0.4} />
       </mesh>
-      <mesh position={[0, -1.4, 0]}>
-        <cylinderGeometry args={[0.035, 0.035, 2.5, 12]} />
-        <meshStandardMaterial color="#64748b" metalness={0.7} roughness={0.3} />
+      <mesh position={[0, -1.3, 0]}>
+        <cylinderGeometry args={[0.025, 0.025, 2.3, 12]} />
+        <meshStandardMaterial color="#4b5563" metalness={0.7} roughness={0.3} />
       </mesh>
-      <ProceduralFlame params={params} />
-      <SootParticles params={params} />
+      <group scale={1.5}>
+        <ProceduralFlame params={params} />
+        <SootParticles params={params} />
+      </group>
       <FlowField airflow={params.airflow} box={[5, 4, 4]} />
       <GravityArrow gravity={params.gravity} />
-      <OrbitControls makeDefault enableDamping minDistance={3} maxDistance={16} />
+      <OrbitControls makeDefault enableDamping enableZoom={zoom} minDistance={4} maxDistance={16} enablePan={false} autoRotate autoRotateSpeed={0.35} />
     </>
   )
 }
@@ -462,23 +468,23 @@ function HazardMarkers({ dims, color, rate }) {
   ))
 }
 
-function CabinScene({ params, xray }) {
+function CabinScene({ params, xray, zoom }) {
   const [dims, setDims] = useState([5, 4, 4])
   const onFit = useCallback((f) => setDims(f.dims), [])
   const hz = hazardLevel(params)
   const rate = { nominal: 1.5, watch: 2.5, elevated: 4, critical: 7 }[hz.level]
   return (
     <>
-      <color attach="background" args={['#03060d']} />
+      <color attach="background" args={['#08090c']} />
       <Stars radius={80} depth={40} count={2500} factor={3} fade speed={0.3} />
       <hemisphereLight args={['#cfe3ff', '#1e293b', 1.1]} />
       <directionalLight position={[6, 8, 5]} intensity={2.2} />
-      <directionalLight position={[-6, -2, -4]} intensity={0.6} color="#7dd3fc" />
+      <directionalLight position={[-6, -2, -4]} intensity={0.6} color="#7aa3f5" />
       <NormalizedModel url={MODEL_URLS.cabin} size={5} xray={xray} onFit={onFit} />
       <HazardMarkers dims={dims} color={hz.color} rate={rate} />
       <pointLight position={[0, 0, 0]} color={hz.color} intensity={hz.level === 'nominal' ? 2 : 12} distance={6} />
-      <FlowField airflow={params.airflow} color="#7dd3fc" box={[dims[0] * 0.8, dims[1] * 0.5, dims[2] * 0.5]} />
-      <OrbitControls makeDefault enableDamping minDistance={2} maxDistance={20} />
+      <FlowField airflow={params.airflow} color="#7aa3f5" box={[dims[0] * 0.8, dims[1] * 0.5, dims[2] * 0.5]} />
+      <OrbitControls makeDefault enableDamping enableZoom={zoom} minDistance={1.5} maxDistance={14} enablePan={false} />
     </>
   )
 }
@@ -502,7 +508,7 @@ function HabitatHazardOverlay({ dims }) {
   )
 }
 
-function HabitatScene({ params, xray }) {
+function HabitatScene({ params, xray, zoom }) {
   const [fit, setFit] = useState({ dims: [5, 2, 5], hasTerrain: false })
   const dims = fit.dims
   const isMars = params.gravity > 0.27
@@ -525,7 +531,7 @@ function HabitatScene({ params, xray }) {
       )}
       <Sparkles count={80} scale={[14, 3, 14]} size={2} speed={0.2} color={surface.dust} opacity={0.5} />
       {hazard && <HabitatHazardOverlay dims={dims} />}
-      <OrbitControls makeDefault enableDamping minDistance={3} maxDistance={25} maxPolarAngle={Math.PI / 2 - 0.05} />
+      <OrbitControls makeDefault enableDamping enableZoom={zoom} minDistance={1.5} maxDistance={16} enablePan={false} maxPolarAngle={Math.PI / 2 - 0.05} />
     </>
   )
 }
@@ -537,9 +543,7 @@ function LoadingOverlay() {
   if (!active) return null
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <div className="glass-panel-sm whitespace-nowrap px-4 py-2 text-center text-xs text-cyan-300">
-        Loading 3D model… {progress.toFixed(0)}%
-      </div>
+      <span className="label num">Loading model {progress.toFixed(0)}%</span>
     </div>
   )
 }
@@ -556,118 +560,39 @@ class SceneErrorBoundary extends Component {
     if (this.state.error)
       return (
         <Html center>
-          <div className="glass-panel-sm max-w-xs px-4 py-3 text-center text-xs text-amber-300">
-            Could not load this 3D model. Switch to the Combustion Chamber view.
-          </div>
+          <p className="w-64 text-center text-[14px] text-muted">This 3D model could not load. Try the flame view.</p>
         </Html>
       )
     return this.props.children
   }
 }
 
-const MODE_ICONS = { cabin: Rocket, habitat: Box, chamber: Flame }
+/** Full-bleed 3D stage. Overlays (HUD, controls) are composed by the parent. */
+const CAMERAS = {
+  chamber: { position: [6, 1.8, 8.5], fov: 40 },
+  cabin: { position: [4.6, 2.6, 5.4], fov: 45 },
+  habitat: { position: [3.2, 1.6, 4.2], fov: 45 },
+}
 
-export default function Viewport3D({ params, mode, setMode }) {
-  const [xray, setXray] = useState(true)
-  const hz = hazardLevel(params)
-  const lunar = isLunarZone(params)
-  const regime = flameRegime(params)
-  const camera = mode === 'chamber' ? { position: [6.5, 3, 9.5], fov: 45 } : { position: [7, 4.5, 8], fov: 45 }
-
+/**
+ * Full-bleed 3D stage. Overlays (HUD, controls) are composed by the parent.
+ * Wheel/pinch zoom only activates after the user clicks into the scene, so the
+ * page keeps scrolling normally until then.
+ */
+export default function Viewport3D({ params, mode, xray = true }) {
+  const [zoom, setZoom] = useState(false)
   return (
-    <div className="relative flex h-full min-h-[460px] flex-col">
-      {/* Header: 3-mode selector */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 px-3 py-2">
-        <div className="heading-font text-sm font-semibold text-slate-100">3D Digital Twin</div>
-        <div className="flex flex-wrap gap-1 rounded-lg bg-slate-900/80 p-1" role="tablist" aria-label="Viewport mode">
-          {Object.values(VIEW_MODES).map((m) => {
-            const Icon = MODE_ICONS[m.id]
-            const active = mode === m.id
-            return (
-              <button
-                key={m.id}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setMode(m.id)}
-                title={m.label}
-                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
-                  active ? 'bg-cyan-400/15 text-cyan-300 ring-1 ring-cyan-400/40' : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Icon size={13} />
-                <span className="hidden md:inline">{m.label}</span>
-                <span className="md:hidden">{m.short}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="relative flex-1">
-        <Canvas key={mode} className="!absolute inset-0" camera={camera} dpr={[1, 2]} gl={{ antialias: true }}>
-          <SceneErrorBoundary>
-            <Suspense fallback={null}>
-              {mode === 'chamber' && <ChamberScene params={params} />}
-              {mode === 'cabin' && <CabinScene params={params} xray={xray} />}
-              {mode === 'habitat' && <HabitatScene params={params} xray={xray} />}
-            </Suspense>
-          </SceneErrorBoundary>
-        </Canvas>
-
-        <LoadingOverlay />
-
-        {/* HUD */}
-        <div className="pointer-events-none absolute left-3 top-3 flex max-w-[70%] flex-col gap-1.5">
-          <div className="glass-panel-sm mono flex flex-wrap gap-x-3 gap-y-1 px-2.5 py-1.5 text-[11px] text-slate-300">
-            <span>O₂ <b className="text-white">{params.o2}%</b></span>
-            <span>P <b className="text-white">{params.pressure.toFixed(1)} psi</b></span>
-            <span>Flow <b className="text-white">{params.airflow} cm/s</b></span>
-            <span>g <b className="text-white">{params.gravity}</b></span>
-          </div>
-          {mode === 'chamber' && (
-            <div className="glass-panel-sm px-2.5 py-1.5 text-[11px]">
-              <div className="font-semibold text-orange-300">{regime.name}</div>
-              <div className="text-slate-400">Evidence: {regime.ref}</div>
-            </div>
-          )}
-          {mode === 'habitat' && (
-            <div className="glass-panel-sm px-2.5 py-1.5 text-[11px] text-slate-300">
-              {params.gravity > 0.27 ? SURFACE.mars.name : SURFACE.moon.name}
-              {(params.gravity === 0 || params.gravity === 1) && (
-                <span className="block text-slate-500">Tint follows gravity slider (≤ 0.27g Moon, &gt; 0.27g Mars)</span>
-              )}
-            </div>
-          )}
-          {mode !== 'chamber' && (
-            <div className="glass-panel-sm flex items-center gap-1.5 px-2.5 py-1.5 text-[11px]" style={{ color: hz.color }}>
-              <TriangleAlert size={12} /> Cabin hazard index: <b>{hz.label}</b>
-            </div>
-          )}
-          {mode === 'habitat' && lunar && (
-            <div className="rounded-md border border-orange-400/50 bg-orange-500/15 px-2.5 py-1.5 text-[11px] font-semibold text-orange-200 pulse-glow">
-              Pressurized module hazard: O₂ ≥ {LUNAR_TARGET.o2MinPct}% or P ≤ {LUNAR_TARGET.pressureMaxPsi} psi
-            </div>
-          )}
-        </div>
-
-        {mode !== 'chamber' && (
-          <button
-            onClick={() => setXray((v) => !v)}
-            className={`absolute right-3 top-3 flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] ${
-              xray ? 'border-cyan-400/40 bg-cyan-400/10 text-cyan-300' : 'border-slate-600 bg-slate-900/80 text-slate-400'
-            }`}
-            title="Make the hull translucent to reveal interior hazard and ventilation indicators"
-          >
-            <ScanEye size={12} /> X-ray {xray ? 'on' : 'off'}
-          </button>
-        )}
-
-        <div className="pointer-events-none absolute bottom-2 right-3 text-right text-[10px] text-slate-500">
-          Illustrative visualization · physics-informed, not a CFD simulation
-          <br />
-          Drag to orbit · scroll to zoom
-        </div>
-      </div>
+    <div className="absolute inset-0" onPointerDown={() => setZoom(true)} onPointerLeave={() => setZoom(false)}>
+      <Canvas key={mode} camera={CAMERAS[mode]} dpr={[1, 2]} gl={{ antialias: true }} aria-label="3D view of the selected scene">
+        <SceneErrorBoundary>
+          <Suspense fallback={null}>
+            {mode === 'chamber' && <ChamberScene params={params} zoom={zoom} />}
+            {mode === 'cabin' && <CabinScene params={params} xray={xray} zoom={zoom} />}
+            {mode === 'habitat' && <HabitatScene params={params} xray={xray} zoom={zoom} />}
+          </Suspense>
+        </SceneErrorBoundary>
+      </Canvas>
+      <LoadingOverlay />
     </div>
   )
 }
