@@ -1,9 +1,11 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from 'react'
-import { Search, X, Sparkles } from 'lucide-react'
-import { Button, CiteInline, PsiId, SectionHead, Segmented } from '../../shared/ui'
+import { ChevronDown, Search, X, Sparkles } from 'lucide-react'
+import { Button, CiteInline, PsiId, SITag, SectionHead } from '../../shared/ui'
 import { FUEL_PHASES, FUEL_PHASE_LABELS, HARDWARE_RACKS, RACK_LABELS, SAFETY_PILLARS, envelopeSummary } from '../../shared/catalog'
 import CompareModal from './CompareModal'
 import { getYoloVideo } from '../../shared/yoloVideos'
+import KnowledgeGraph3D from './KnowledgeGraph3D'
+import { GROUP_STYLE } from './graphStyle'
 
 const MAX_COMPARE = 4
 
@@ -13,19 +15,19 @@ const THINKING_STEPS = [
   'Correlating experiments and raw files in the knowledge graph...',
 ]
 
-function Select({ label, value, onChange, options, render = (o) => o }) {
+/** Full-width select for the search panel. */
+function PanelSelect({ label, value, onChange, options, render = (o) => o }) {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-[13px] text-faint">{label}</span>
+    <label className="flex min-w-0 flex-col gap-1.5">
+      <span className="text-[13px] text-muted">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-10 rounded-full border border-line-strong bg-ground px-4 text-[14px] text-ink outline-none transition-colors hover:border-ink focus-visible:border-nasa-red"
+        className="h-9 w-full rounded-full border border-line-strong bg-ground px-3 text-[13px] text-ink outline-none transition-colors hover:border-ink focus-visible:border-nasa-red"
       >
-        <option value="All">All</option>
         {options.map((o) => (
-          <option key={o} value={o}>
-            {render(o)}
+          <option key={o.value ?? o} value={o.value ?? o}>
+            {o.label ?? render(o)}
           </option>
         ))}
       </select>
@@ -58,7 +60,7 @@ function Row({ inv, selected, canSelect, onToggle, onOpen }) {
           <span>{inv.project_type.replace(' Investigation', '')}</span>
           <CiteInline inv={inv} />
           {mediaLabel && (
-            <span className="rounded-full border border-[#fc3d21]/40 bg-[#fc3d21]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#fc3d21]">
+            <span className="inline-flex h-6 items-center rounded-full border border-line-strong px-2.5 text-[12px] text-muted">
               {mediaLabel}
             </span>
           )}
@@ -100,20 +102,19 @@ function OllamaThinkingIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-line-strong bg-raised/75 px-4 py-3.5 backdrop-blur-md transition-all"
+      className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-4 py-3.5"
     >
       <div className="flex min-w-0 items-center gap-3.5">
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#fc3d21]/30 bg-[#fc3d21]/10 text-[#fc3d21]">
-          <Sparkles size={16} className="animate-pulse" />
-          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 animate-ping rounded-full bg-[#fc3d21]" />
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-strong text-nasa-red">
+          <Sparkles size={15} className="animate-pulse" aria-hidden="true" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
             <span>Reasoning semantic search</span>
             <span className="inline-flex items-center gap-1 pt-1">
-              <span className="h-1 w-1 animate-bounce rounded-full bg-[#fc3d21] [animation-delay:-0.3s]" />
-              <span className="h-1 w-1 animate-bounce rounded-full bg-[#fc3d21] [animation-delay:-0.15s]" />
-              <span className="h-1 w-1 animate-bounce rounded-full bg-[#fc3d21]" />
+              <span className="h-1 w-1 animate-bounce rounded-full bg-nasa-red [animation-delay:-0.3s]" />
+              <span className="h-1 w-1 animate-bounce rounded-full bg-nasa-red [animation-delay:-0.15s]" />
+              <span className="h-1 w-1 animate-bounce rounded-full bg-nasa-red" />
             </span>
           </div>
           <p className="truncate text-[12px] text-muted transition-opacity duration-300">
@@ -121,9 +122,7 @@ function OllamaThinkingIndicator() {
           </p>
         </div>
       </div>
-      <span className="hidden shrink-0 rounded-full border border-line-strong bg-ground px-2.5 py-1 font-mono text-[11px] text-faint sm:inline-block">
-        OLLAMA · PSI
-      </span>
+      <span className="label hidden shrink-0 sm:inline">Ollama · PSI</span>
     </div>
   )
 }
@@ -142,6 +141,7 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
   const [comparing, setComparing] = useState(false)
 
   const iframeRef = useRef(null)
+  const [listOpen, setListOpen] = useState(false)
   const abortControllerRef = useRef(null)
 
   const compareItems = useMemo(
@@ -246,9 +246,29 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
   const toggle = (id) =>
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length < MAX_COMPARE ? [...s, id] : s))
 
+  // Presentation only: the same file IDs that syncGraphHighlight sends to the graph.
+  const graphHighlightIds = useMemo(() => (ollamaData?.files?.length ? ollamaData.files.map((f) => String(f[0])) : []), [ollamaData])
+  // Search details per raw file, shown in the graph's node card instead of a text list.
+  const graphMatchInfo = useMemo(
+    () => Object.fromEntries((ollamaData?.files ?? []).map((f) => [String(f[0]), { description: f[2], score: f[4], matches: f[5] }])),
+    [ollamaData],
+  )
+  const openPsiTag = (node) => {
+    if (!node.id.startsWith('psi:')) return
+    const inv = investigations.find((i) => i.psi_id === node.id.slice(4))
+    if (inv) onOpenDetail(inv)
+  }
+
   const hasActiveSearch = Boolean(inputQuery || activeQuery || isSearching)
   const filteredUI = hasActiveSearch || pillar !== 'All' || rack !== 'All' || fuel !== 'All' || scope !== 'All'
   const isSearchCompleted = Boolean(activeQuery && ollamaData && !isSearching)
+  // After a search, the two most relevant matches are shown directly; the rest stay collapsed.
+  const TOP_MATCHES = 2
+  const topMatches = isSearchCompleted ? results.slice(0, TOP_MATCHES) : []
+  const listed = isSearchCompleted ? results.slice(TOP_MATCHES) : results
+  useEffect(() => {
+    if (isSearchCompleted) setListOpen(false)
+  }, [isSearchCompleted])
 
   const reset = () => {
     cancelOrClearSearch()
@@ -258,111 +278,211 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
     setScope('All')
   }
 
-  return (
-    <div className="mx-auto max-w-[1440px] px-4 pb-40 pt-16 md:px-8 md:pt-24">
-      <SectionHead index="Library" title="Microgravity combustion, catalogued">
-        Semantic search powered by NASA PSI Ollama Engine.
-      </SectionHead>
+  /* ── Layout mirrors the Simulator: title left, 3D graph as the stage, search panel right. ── */
+  const statusLine = isSearching
+    ? 'Searching…'
+    : isSearchCompleted
+      ? `${results.length} matches · ${ollamaData?.files?.length ?? 0} files lit in the graph`
+      : `${investigations.length} investigations`
 
-      <form onSubmit={handleSearch} className="relative mb-6 flex items-center gap-3 border-b border-line-strong pb-2 focus-within:border-nasa-red">
-        <Search size={20} className="shrink-0 text-faint" aria-hidden="true" />
-        <input
-          type="text"
-          value={inputQuery}
-          onChange={(e) => setInputQuery(e.target.value)}
-          placeholder="Search phenomena, sensors, or IDs (e.g. spherical flame, psi10)..."
-          aria-label="Search investigations"
-          spellCheck={false}
-          className="h-14 w-full bg-transparent pl-2 pr-2 font-display text-[clamp(18px,2.2vw,26px)] font-light text-ink outline-none placeholder:text-faint"
-        />
-        {hasActiveSearch && (
-          <button
-            type="button"
-            onClick={cancelOrClearSearch}
-            aria-label={isSearching ? 'Stop search' : 'Clear search'}
-            title={isSearching ? 'Stop search' : 'Clear search'}
-            className="shrink-0 rounded-full p-2 text-faint transition-colors hover:bg-raised hover:text-ink"
-          >
-            <X size={18} />
-          </button>
-        )}
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={isSearching || !inputQuery.trim()}
-          className="shrink-0"
-        >
-          {isSearching ? 'Searching...' : 'Search'}
+  const searchPanel = (
+    <div className="rounded-2xl border border-line bg-surface p-5">
+      <div className="mb-4">
+        <h2 className="text-[15px] font-medium leading-snug tracking-normal">Search the library</h2>
+        <span className="label mt-1 block" aria-live="polite">
+          {statusLine}
+        </span>
+      </div>
+
+      <form onSubmit={handleSearch} className="space-y-3">
+        <div className="flex h-11 items-center gap-2 rounded-full border border-line-strong px-4 transition-colors focus-within:border-nasa-red">
+          <Search size={16} className="shrink-0 text-faint" aria-hidden="true" />
+          <input
+            type="text"
+            value={inputQuery}
+            onChange={(e) => setInputQuery(e.target.value)}
+            placeholder="e.g. spherical flame, psi10…"
+            aria-label="Search investigations"
+            spellCheck={false}
+            className="w-full min-w-0 bg-transparent text-[15px] text-ink outline-none placeholder:text-faint"
+          />
+          {hasActiveSearch && (
+            <button
+              type="button"
+              onClick={cancelOrClearSearch}
+              aria-label={isSearching ? 'Stop search' : 'Clear search'}
+              title={isSearching ? 'Stop search' : 'Clear search'}
+              className="-mr-2 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-faint transition-colors hover:bg-raised hover:text-ink"
+            >
+              <X size={15} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <Button type="submit" variant="primary" disabled={isSearching || !inputQuery.trim()} className="w-full">
+          {isSearching ? 'Searching…' : 'Search'}
         </Button>
       </form>
 
-      {isSearching && <OllamaThinkingIndicator />}
+      {isSearching && (
+        <div className="mt-3 [&>div]:mb-0">
+          <OllamaThinkingIndicator />
+        </div>
+      )}
 
-      <div className="mb-10 flex flex-wrap items-end gap-4">
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-faint">Pillar</span>
-          <Segmented
-            label="Safety pillar"
-            size="sm"
-            value={pillar}
-            onChange={setPillar}
-            options={['All', ...SAFETY_PILLARS].map((p) => ({ value: p, label: p }))}
-          />
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <PanelSelect label="Pillar" value={pillar} onChange={setPillar} options={['All', ...SAFETY_PILLARS]} />
+        <PanelSelect
+          label="Where"
+          value={scope}
+          onChange={setScope}
+          options={[
+            { value: 'All', label: 'All' },
+            { value: 'Flight', label: 'In orbit' },
+            { value: 'Ground', label: 'Ground' },
+          ]}
+        />
+        <PanelSelect label="Hardware" value={rack} onChange={setRack} options={['All', ...HARDWARE_RACKS]} render={(o) => (o === 'All' ? 'All' : RACK_LABELS[o].split(' (')[0])} />
+        <PanelSelect label="Fuel" value={fuel} onChange={setFuel} options={['All', ...FUEL_PHASES]} render={(o) => (o === 'All' ? 'All' : FUEL_PHASE_LABELS[o])} />
+      </div>
+      {filteredUI && (
+        <button type="button" onClick={reset} className="mt-4 inline-flex items-center gap-1 text-[13px] text-muted hover:text-ink">
+          <X size={13} aria-hidden="true" /> Clear search and filters
+        </button>
+      )}
+    </div>
+  )
+
+  const legend = (
+    <>
+      <div>
+        <dt className="label">Knowledge graph</dt>
+        <dd className="mt-2">
+          <ul className="space-y-1.5 text-[14px] text-muted">
+            {Object.values(GROUP_STYLE).map((g) => (
+              <li key={g.label} className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full" style={{ background: g.color }} aria-hidden="true" />
+                {g.label}
+              </li>
+            ))}
+          </ul>
+        </dd>
+      </div>
+      {ollamaData?.files?.length > 0 && (
+        <div>
+          <dt className="label">Search</dt>
+          <dd className="mt-1 flex flex-wrap items-center gap-2 text-ink">
+            <span className="pulse-dot h-2 w-2 rounded-full bg-nasa-red" aria-hidden="true" />
+            {ollamaData.files.length} files highlighted
+          </dd>
+          <dd className="mt-1">
+            <SITag />
+          </dd>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-faint">Where</span>
-          <Segmented
-            label="Flight or ground"
-            size="sm"
-            value={scope}
-            onChange={setScope}
-            options={[
-              { value: 'All', label: 'All' },
-              { value: 'Flight', label: 'In orbit' },
-              { value: 'Ground', label: 'Ground' },
-            ]}
+      )}
+    </>
+  )
+
+  return (
+    <>
+      <section aria-label="Knowledge graph" className="relative overflow-hidden lg:h-[calc(100svh-64px)] lg:min-h-[680px]">
+        <div className="relative h-[640px] lg:absolute lg:inset-0 lg:h-auto">
+          <KnowledgeGraph3D
+            highlightIds={graphHighlightIds}
+            matchInfo={graphMatchInfo}
+            onSelectNode={openPsiTag}
+            cardPosition="bottom-5 left-[calc(50%-180px)]"
+            cameraZ={17}
           />
+          {/* Keeps the title legible over the graph, as in the Simulator's habitat view. */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[560px] max-w-full bg-gradient-to-r from-ground/90 via-ground/60 to-transparent" aria-hidden="true" />
+
+          <div className="pointer-events-none relative z-20 mx-auto flex h-full max-w-[1440px] flex-col px-4 pt-8 md:px-8 md:pt-12">
+            <div className="flex flex-wrap items-start justify-between gap-6">
+              <div className="pointer-events-auto rise">
+                <div className="label mb-4">Library · NASA PSI</div>
+                <h1 className="text-[clamp(44px,7vw,96px)] font-light leading-[0.95]">
+                  Combustion,
+                  <br />
+                  catalogued
+                </h1>
+                <p className="mt-5 hidden max-w-[34ch] text-muted sm:block">Search microgravity fire experiments in plain words, and watch their raw data light up.</p>
+                <dl className="mt-28 hidden w-fit gap-5 text-[14px] lg:grid">{legend}</dl>
+              </div>
+              <div className="pointer-events-auto hidden w-[300px] lg:block">{searchPanel}</div>
+            </div>
+
+            <dl className="pointer-events-auto mb-6 mt-auto grid w-fit gap-4 text-[14px] lg:hidden">{legend}</dl>
+
+            <a
+              href="#library-results-title"
+              className="pointer-events-auto absolute bottom-4 right-4 hidden h-10 items-center gap-2 rounded-full border border-line-strong bg-ground px-4 text-[14px] text-ink transition-colors hover:border-ink md:right-8 lg:bottom-8 lg:inline-flex"
+            >
+              {isSearchCompleted ? 'See the results' : 'See all investigations'} <ChevronDown size={14} aria-hidden="true" />
+            </a>
+            <span className="label pointer-events-none absolute bottom-4 left-8 hidden md:block lg:bottom-8">
+              Click a node for details · drag to move · click scene to zoom
+            </span>
+          </div>
         </div>
-        <Select label="Hardware" value={rack} onChange={setRack} options={HARDWARE_RACKS} render={(o) => RACK_LABELS[o].split(' (')[0]} />
-        <Select label="Fuel" value={fuel} onChange={setFuel} options={FUEL_PHASES} render={(o) => FUEL_PHASE_LABELS[o]} />
-        {filteredUI && (
-          <button type="button" onClick={reset} className="inline-flex h-10 items-center gap-1 text-[14px] text-muted hover:text-ink">
-            <X size={14} aria-hidden="true" /> Clear
+
+        {/* Mobile: search panel sits below the graph */}
+        <div className="px-4 py-6 lg:hidden">{searchPanel}</div>
+      </section>
+
+      <section className="mx-auto max-w-[1440px] px-4 pb-40 pt-24 md:px-8 md:pt-32">
+        <div id="library-results-title" className="scroll-mt-[88px]" />
+        <SectionHead title={isSearchCompleted ? 'Search results' : 'All investigations'}>
+          {isSearchCompleted
+            ? `The two most relevant matches for “${activeQuery}”; the rest are one click away.`
+            : 'Every investigation in the active PSI catalog. Search to rank them by relevance.'}
+        </SectionHead>
+
+        {topMatches.length > 0 && (
+          <div className="mb-6">
+            <div className="mb-2 flex flex-wrap items-center gap-3">
+              <span className="label">Most relevant</span>
+              <SITag />
+            </div>
+            <ol className="border-t border-line">
+              {topMatches.map((inv) => (
+                <Row
+                  key={inv.psi_id}
+                  inv={inv}
+                  selected={selected.includes(inv.psi_id)}
+                  canSelect={selected.length < MAX_COMPARE}
+                  onToggle={toggle}
+                  onOpen={onOpenDetail}
+                />
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {listed.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setListOpen((v) => !v)}
+            aria-expanded={listOpen}
+            aria-controls="investigation-list"
+            className="group flex w-full items-center justify-between gap-6 rounded-2xl border border-line bg-surface px-6 py-6 text-left transition-colors hover:border-line-strong md:px-8"
+          >
+            <span>
+              <span className="label block">{isSearchCompleted ? 'Other matches' : 'Investigations'}</span>
+              <span className="mt-1 block text-[clamp(24px,3vw,34px)] font-medium text-ink">
+                <span className="num">{listed.length}</span>
+                <span className="text-faint">{isSearchCompleted ? ' more' : ` of ${investigations.length}`}</span>
+              </span>
+              <span className="mt-1 block text-[14px] text-muted">{listOpen ? 'Hide the list' : 'Show the list'}</span>
+            </span>
+            <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-line-strong text-ink transition-colors group-hover:border-ink">
+              <ChevronDown size={20} className={`transition-transform duration-200 ${listOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </span>
           </button>
         )}
-      </div>
 
-      <div className="flex flex-col">
-        <div
-          className={`relative w-full overflow-hidden rounded-xl border border-line-strong bg-[#07080b] ${
-            isSearchCompleted ? 'order-2 mt-14' : 'order-1 mb-10'
-          }`}
-          style={{ height: '500px' }}
-        >
-          {ollamaData?.files?.length > 0 && (
-            <div className="pointer-events-none absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full border border-[#fc3d21]/40 bg-[#18181b]/85 px-3.5 py-1.5 text-[12px] text-ink backdrop-blur-md">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-[#fc3d21]" />
-              <span>{ollamaData.files.length} highlighted nodes</span>
-            </div>
-          )}
-          <iframe
-            ref={iframeRef}
-            src="/galaxia_obsidian.html"
-            onLoad={() => syncGraphHighlight(ollamaData)}
-            width="100%"
-            height="100%"
-            title="File and tag galaxy"
-            className="border-none"
-          />
-        </div>
-
-        <div className={isSearchCompleted ? 'order-1' : 'order-2'}>
-          <div className="label mb-2" aria-live="polite">
-            {results.length} of {investigations.length} {ollamaData ? '(Semantic Matches)' : ''}
-          </div>
-
-          <ol className="border-t border-line">
-            {results.map((inv) => (
+        <div id="investigation-list" hidden={!listOpen || !listed.length} aria-live="polite">
+          <ol className="mt-2 border-t border-line">
+            {listed.map((inv) => (
               <Row
                 key={inv.psi_id}
                 inv={inv}
@@ -373,40 +493,17 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
               />
             ))}
           </ol>
-
-          {!results.length && !isSearching && (
-            <p className="py-16 text-muted">
-              No matches found.{' '}
-              <button type="button" onClick={reset} className="link">
-                Clear filters
-              </button>
-            </p>
-          )}
-
-          {ollamaData?.files?.length > 0 && (
-            <div className="mb-4 mt-16 border-t border-line pt-8">
-              <h3 className="label mb-4 !text-[#fc3d21]">Semantic Raw Files Found ({ollamaData.files.length})</h3>
-              <ul className="divide-y divide-line-strong">
-                {ollamaData.files.map((f) => {
-                  const meta = JSON.parse(f[3] || '{}')
-                  const filename = meta.filename || f[0]
-                  return (
-                    <li key={f[0]} className="py-4">
-                      <div className="text-[15px] font-medium text-ink">
-                        {filename} <span className="num ml-2 text-faint">(Score: {f[4]})</span>
-                      </div>
-                      <div className="mt-1 text-[14px] leading-relaxed text-muted">{f[2]}</div>
-                      <div className="mt-2 inline-block rounded bg-ground px-2 py-1 font-mono text-[12px] text-faint">
-                        Matches: {f[5]}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          )}
         </div>
-      </div>
+
+        {!results.length && !isSearching && (
+          <p className="py-16 text-muted">
+            No matches found.{' '}
+            <button type="button" onClick={reset} className="link">
+              Clear filters
+            </button>
+          </p>
+        )}
+      </section>
 
       {selected.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-ground">
@@ -424,6 +521,6 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
         </div>
       )}
       <CompareModal open={comparing && compareItems.length >= 2} onClose={() => setComparing(false)} items={compareItems} />
-    </div>
+    </>
   )
 }

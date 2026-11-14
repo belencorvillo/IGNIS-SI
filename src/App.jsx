@@ -27,7 +27,7 @@ function Wordmark() {
         <ellipse cx="11" cy="11" rx="10" ry="3.6" fill="none" stroke="currentColor" strokeOpacity="0.35" transform="rotate(-24 11 11)" />
         <circle cx="11" cy="11" r="3.4" fill="#fc3d21" />
       </svg>
-      <span className="font-display text-[17px] font-semibold tracking-tight">IGNIS-SI</span>
+      <span className="whitespace-nowrap font-display text-[17px] font-semibold tracking-tight">IGNIS-SI</span>
     </span>
   )
 }
