@@ -584,7 +584,7 @@ class SceneErrorBoundary extends Component {
 /** Full-bleed 3D stage. Overlays (HUD, controls) are composed by the parent. */
 const CAMERAS = {
   chamber: { position: [6.6, 2, 9.6], fov: 40 },
-  cabin: { position: [5.6, 3, 6.6], fov: 45 },
+  cabin: { position: [4.8, 2.57, 5.66], fov: 45 }, // = previous framing × 0.95³ (three mouse-wheel zoom steps)
   habitat: { position: [3.2, 1.6, 4.2], fov: 45 },
 }
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import SimulatorPage from './pages/simulator/SimulatorPage'
 import LibraryPage from './pages/library/LibraryPage'
 import EarthPage from './pages/earth/EarthPage'
+import AboutPage from './pages/about/AboutPage'
 import CiteModal from './shared/CiteModal'
 import InvestigationDetail from './shared/InvestigationDetail'
 import { Button } from './shared/ui'
@@ -85,22 +86,31 @@ export default function App() {
               </button>
             ))}
           </nav>
-          <span className="hidden sm:block">
+          <div className="hidden items-center gap-1 sm:flex">
             <Button variant="secondary" className="h-9 px-4 text-[14px]" onClick={() => setCiteOpen(true)} disabled={!investigations.length}>
               Cite data
             </Button>
-          </span>
+            <button
+              type="button"
+              onClick={() => go('about')}
+              aria-current={page === 'about' ? 'page' : undefined}
+              className={`h-9 whitespace-nowrap rounded-full px-4 text-[14px] transition-colors duration-150 ${page === 'about' ? 'text-ink' : 'text-faint hover:text-ink'}`}
+            >
+              About us
+            </button>
+          </div>
         </div>
       </header>
 
       <main id="main" className="pt-16">
-        {data.loading && <div className="label flex h-[60vh] items-center justify-center">Loading PSI catalog…</div>}
-        {!data.loading && !investigations.length && (
+        {page === 'about' && <AboutPage />}
+        {page !== 'about' && data.loading && <div className="label flex h-[60vh] items-center justify-center">Loading PSI catalog…</div>}
+        {page !== 'about' && !data.loading && !investigations.length && (
           <div className="mx-auto max-w-xl px-6 py-32 text-center text-muted">
             No investigations could be loaded. Check the backend, catalogo_limpio.json or mock_catalogo.json.
           </div>
         )}
-        {!data.loading && investigations.length > 0 && (
+        {page !== 'about' && !data.loading && investigations.length > 0 && (
           <>
             {page === 'simulator' && (
               <SimulatorPage
@@ -156,6 +166,9 @@ export default function App() {
             )}
             <button type="button" onClick={() => setCiteOpen(true)} className="link text-[14px] sm:hidden">
               Cite data
+            </button>
+            <button type="button" onClick={() => go('about')} className="link text-[14px] sm:hidden">
+              About us
             </button>
           </div>
         </div>
