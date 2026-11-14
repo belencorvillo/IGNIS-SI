@@ -10,6 +10,8 @@ export function MediaPanel({ inv }) {
   const [telemetry, setTelemetry] = useState(null)
   const [videoOk, setVideoOk] = useState(true)
   const yoloMedia = getYoloVideo(inv?.psi_id)
+  // Media processed by a detection model (e.g. YOLO) is SI-generated and must be labelled as such.
+  const siProcessed = Boolean(yoloMedia?.model && yoloMedia.model !== 'None')
 
   useEffect(() => {
     let alive = true
@@ -29,8 +31,11 @@ export function MediaPanel({ inv }) {
       {yoloMedia && (
         <div className="overflow-hidden rounded-2xl border border-line-strong bg-[#07080b]">
           <div className="flex items-center justify-between gap-2 border-b border-line px-3.5 py-2 text-[12px]">
-            <span className="truncate font-medium text-ink">{yoloMedia.title}</span>
-            {yoloMedia.model && (
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="truncate font-medium text-ink">{yoloMedia.title}</span>
+              {siProcessed && <SITag />}
+            </span>
+            {siProcessed && (
               <span className="shrink-0 rounded-full border border-[#fc3d21]/40 bg-[#fc3d21]/10 px-2 py-0.5 font-mono text-[11px] text-[#fc3d21]">
                 {yoloMedia.model}
               </span>
@@ -53,7 +58,7 @@ export function MediaPanel({ inv }) {
               preload="metadata"
               className="aspect-video w-full bg-black object-contain"
             >
-              Tu navegador no soporta la reproducción de vídeo HTML5.
+              Your browser does not support HTML5 video.
             </video>
           )}
         </div>
