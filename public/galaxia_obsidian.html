@@ -1,0 +1,281 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        
+    </head>
+
+
+    <body>
+
+<style>
+  html, body, #mynetwork {
+    width: 100% !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    /* Fondo oscuro espacial (cámbialo a transparent solo si el iframe padre ya es oscuro) */
+    background: radial-gradient(circle at center, #11131a 0%, #07080b 100%) !important;
+    border: none !important;
+    outline: none !important;
+  }
+  
+  .custom-legend {
+    position: absolute; top: 24px; left: 24px; z-index: 9999;
+    background: rgba(24, 24, 27, 0.65); backdrop-filter: blur(12px);
+    padding: 18px 24px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08); color: #E5E7EB;
+    font-family: Inter, -apple-system, sans-serif;
+  }
+  .custom-legend h3 { margin: 0 0 14px 0; font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.05em; }
+  .legend-item { margin-bottom: 12px; display: flex; align-items: center; font-size: 13px; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 14px; }
+</style>
+
+<div class="custom-legend">
+    <h3>Data Network</h3>
+    <div class="legend-item"><span class="legend-dot" style="background-color: #fc3d21; box-shadow: 0 0 8px #fc3d21;"></span> Raw .CSV</div>
+    <div class="legend-item"><span class="legend-dot" style="background-color: #60a5fa; box-shadow: 0 0 8px #60a5fa;"></span> Raw .TXT</div>
+    <div class="legend-item"><span class="legend-dot" style="background-color: #eab308; box-shadow: 0 0 8px #eab308;"></span> Taxonomía</div>
+</div>
+
+        <div style="width: 100%; height: 100vh; padding: 0; margin: 0;">
+            
+            
+            <div id="mynetwork" ></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"font": {"color": "#D1D5DB"}, "group": "archivo_txt", "id": "248F001_LLLUV_Camera_Settings", "label": "248F001_LLLUV_Camera_Settings.txt", "shape": "dot", "size": 20, "title": "ID: 248F001_LLLUV_Camera_Settings\nT\u00edtulo: Configuraci\u00f3n de la C\u00e1mara LLL UV en 2009-07-01 a las 16:28\nResumen: El archivo contiene configuraciones de la c\u00e1mara LLL UV (Low Level Liquid) en el momento del timestamp \u00272009-07-01 16:28:56.739274\u0027. Las configuraciones incluyen par\u00e1metros como resoluci\u00f3n, formato de imagen y ajustes de exposici\u00f3n."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "psi:PSI-39", "label": "psi:PSI-39", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: psi:PSI-39"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "rack:cir_acme", "label": "rack:cir_acme", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: rack:cir_acme"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "sensor:high_speed_optical_cameras", "label": "sensor:high_speed_optical_cameras", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: sensor:high_speed_optical_cameras"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "phenom:spherical_diffusion_flame", "label": "phenom:spherical_diffusion_flame", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: phenom:spherical_diffusion_flame"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "sensor:optical_imaging", "label": "sensor:optical_imaging", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: sensor:optical_imaging"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "phase:liquid_droplet", "label": "phase:liquid_droplet", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: phase:liquid_droplet"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_csv", "id": "PSI-69_Experimental table_FLEX", "label": "PSI-69_Experimental table_FLEX.csv", "shape": "dot", "size": 20, "title": "ID: PSI-69_Experimental table_FLEX\nT\u00edtulo: Summary of Experiment Data\nResumen: This dataset contains information on the performance and status of experiments involving Methanol (CH\u2083OH) and Heptane ((C\u2087H\u2081\u2076)) in various conditions. The data spans from November 2011 to December 2011, with a total number of entries: 274 records.\n\nThe dataset includes the following fields:\n- Experiment ID (e.g., H15M201)\n- Date and Time of experiment\n- Type of substance used in experiments (Methanol or Heptane)\n- Various performance metrics including but not limited to: \n  - Concentration levels, \n  - Temperature,\n  - Pressure,\n  - pH level,\n  - Other relevant parameters.\n- Status of the experiment at conclusion (e.g., Extinction, Completion, Disruption).\n\nKey Observations:\n1. Methanol experiments were conducted more frequently than Heptane ones and showed a wide range in concentration levels from 0.24 to 0.56 units across different conditions.\n2. The majority of the experiments concluded with \u0027Extinction\u0027 status, indicating successful completion or termination under controlled circumstances."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "type:ground_investigation", "label": "type:ground_investigation", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: type:ground_investigation"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "relevance:lunar_habitat", "label": "relevance:lunar_habitat", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: relevance:lunar_habitat"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_txt", "id": "C039H03_Chamber_Readings", "label": "C039H03_Chamber_Readings.txt", "shape": "dot", "size": 20, "title": "ID: C039H03_Chamber_Readings\nT\u00edtulo: Datos de precios\nResumen: Este conjunto de datos contiene informaci\u00f3n sobre los cambios en el precio durante diferentes momentos. Los valores se miden con una precisi\u00f3n de 0,1 unidades y est\u00e1n agrupados por intervalos regulares de tiempo (cada 6 segundos). Se observa un rango de precios que oscila entre aproximadamente 43.42 a 43.80."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "pillar:prevention", "label": "pillar:prevention", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: pillar:prevention"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "type:microgravity_investigation", "label": "type:microgravity_investigation", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: type:microgravity_investigation"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_txt", "id": "PSI-10_Raw Data_as run21301J4", "label": "PSI-10_Raw Data_as run21301J4.txt", "shape": "dot", "size": 20, "title": "ID: PSI-10_Raw Data_as run21301J4\nT\u00edtulo: Configuraci\u00f3n de c\u00e1mara y flujo para ignici\u00f3n y prueba del combustible en el rack CIR con ignitores\nResumen: Esta configuraci\u00f3n de archivo contiene detalles sobre la c\u00e1mara intensificada y los par\u00e1metros del flujo para una prueba de ignici\u00f3n y prueba del combustible en el rack CIR (Acme) con ignitores. Se incluyen ajustes espec\u00edficos como ganancias, exposiciones, posiciones de fibra \u00f3ptica e interrupciones de flujo."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "fuel:hydrocarbon_spacecraft_materials", "label": "fuel:hydrocarbon_spacecraft_materials", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: fuel:hydrocarbon_spacecraft_materials"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "sensor:photomultiplier_tubes_pmt", "label": "sensor:photomultiplier_tubes_pmt", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: sensor:photomultiplier_tubes_pmt"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "psi:PSI-10", "label": "psi:PSI-10", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: psi:PSI-10"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "phenom:flame_liftoff_extinction", "label": "phenom:flame_liftoff_extinction", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: phenom:flame_liftoff_extinction"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "phase:gaseous", "label": "phase:gaseous", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: phase:gaseous"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_csv", "id": "PSI-117_Analyzed Data_PROCI_C12_2019_Three_Stage", "label": "PSI-117_Analyzed Data_PROCI_C12_2019_Three_Stage.csv", "shape": "dot", "size": 20, "title": "ID: PSI-117_Analyzed Data_PROCI_C12_2019_Three_Stage\nT\u00edtulo: Tabla de datos\nResumen: Esta tabla presenta una serie de mediciones que parecen estar relacionadas con la investigaci\u00f3n del suelo, posiblemente en el contexto de un proyecto civil o geot\u00e9cnico. Las columnas incluyen valores num\u00e9ricos y posibles etiquetas para categorizar los datos."}, {"font": {"color": "#D1D5DB"}, "group": "archivo_csv", "id": "PSI-117_Analyzed Data_MST_2024_Burning_history_Flame_diameter", "label": "PSI-117_Analyzed Data_MST_2024_Burning_history_Flame_diameter.csv", "shape": "dot", "size": 20, "title": "ID: PSI-117_Analyzed Data_MST_2024_Burning_history_Flame_diameter\nT\u00edtulo: Datos de Temperatura vs Tiempo\nResumen: Este conjunto de datos representa la variaci\u00f3n de temperatura con el tiempo en un medio s\u00f3lido. Los valores se midieron a intervalos regulares y reflejan posibles cambios t\u00e9rmicos o fen\u00f3menos relacionados con la conductividad t\u00e9rmica del material bajo estudio."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "phase:solid", "label": "phase:solid", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: phase:solid"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_csv", "id": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "label": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure.csv", "shape": "dot", "size": 20, "title": "ID: PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure\nT\u00edtulo: Relaci\u00f3n entre el di\u00e1metro de extinci\u00f3n y la presi\u00f3n para diferentes tipos de combustible en condiciones experimentales\nResumen: Este archivo contiene datos experimentales y modelados del di\u00e1metro de extinci\u00f3n (Dext) para diferentes tipos de combustible en funci\u00f3n de la presi\u00f3n. Los combustibles analizados son hidrocarburos y un compuesto de fibra de algod\u00f3n y vidrio, con condiciones extremas de ox\u00edgeno reducido."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "env:reduced_cabin_pressure", "label": "env:reduced_cabin_pressure", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: env:reduced_cabin_pressure"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "psi:PSI-117", "label": "psi:PSI-117", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: psi:PSI-117"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "env:extreme_o2", "label": "env:extreme_o2", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: env:extreme_o2"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "fuel:cotton_fiberglass_blend", "label": "fuel:cotton_fiberglass_blend", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: fuel:cotton_fiberglass_blend"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_txt", "id": "248F001_Color_Camera_Settings", "label": "248F001_Color_Camera_Settings.txt", "shape": "dot", "size": 20, "title": "ID: 248F001_Color_Camera_Settings\nT\u00edtulo: Configuraci\u00f3n de la C\u00e1mara Color en el IPSU durante una Misi\u00f3n Espacial\nResumen: El archivo 248F001_Color_Camera_Settings.txt contiene configuraciones de la c\u00e1mara color en el IPSU (Instrument Processing Subsystem Unit) durante una misi\u00f3n espacial. Las variables incluyen: tiempo del sistema, tipo de c\u00e1mara anal\u00f3gica, diagn\u00f3stico, iluminaci\u00f3n, formato RGB con 24 bits por p\u00edxel y un fotograma a 30 fps, resoluci\u00f3n horizontal de 640 p\u00edxeles y vertical de 480 p\u00edxeles. La tasa de archivo es de 1 frame por segundo en el formato RGB 24."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "fuel:propane_c3h8", "label": "fuel:propane_c3h8", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: fuel:propane_c3h8"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "sensor:temperature_radiative_sensors", "label": "sensor:temperature_radiative_sensors", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: sensor:temperature_radiative_sensors"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "sensor:thermocouples", "label": "sensor:thermocouples", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: sensor:thermocouples"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "psi:PSI-99", "label": "psi:PSI-99", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: psi:PSI-99"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_txt", "id": "PSI-10_Raw Data_as runAcmeCameraConfigure_2021-10-28_301_14.00.26", "label": "PSI-10_Raw Data_as runAcmeCameraConfigure_2021-10-28_301_14.00.26.txt", "shape": "dot", "size": 20, "title": "ID: PSI-10_Raw Data_as runAcmeCameraConfigure_2021-10-28_301_14.00.26\nT\u00edtulo: Configuraci\u00f3n de la c\u00e1mara Acme para el PSI-10 en fecha 28/10/2021\nResumen: Los datos proporcionados describen la configuraci\u00f3n de una c\u00e1mara Acme utilizada en el experimento PSI-10. La configuraci\u00f3n incluye ajustes como la tasa de fotogramas (30 fps), tiempo de integraci\u00f3n, ganancia y otros par\u00e1metros del sensor."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "gravity:0g_microgravity", "label": "gravity:0g_microgravity", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: gravity:0g_microgravity"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_csv", "id": "PSI-142_Experimental table_Data Summary Table", "label": "PSI-142_Experimental table_Data Summary Table.csv", "shape": "dot", "size": 20, "title": "ID: PSI-142_Experimental table_Data Summary Table\nT\u00edtulo: Tabla Experimental de Datos para Limites y Predicciones de Combustible en Presencia e Absencia de Ozono\nResumen: Esta tabla de datos experimentales contiene informaci\u00f3n sobre los l\u00edmites de combusti\u00f3n (CFE) y las predicciones vs medidas para etileno en presencia e ausencia de ozono. Tambi\u00e9n incluye mediciones computadas del DME/O2/O3, as\u00ed como la PLIF de CH2O y termometr\u00eda asociada."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "fuel:methane_ch4", "label": "fuel:methane_ch4", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: fuel:methane_ch4"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "psi:PSI-142", "label": "psi:PSI-142", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: psi:PSI-142"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "fuel:ethylene_c2h4", "label": "fuel:ethylene_c2h4", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: fuel:ethylene_c2h4"}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "fuel:n_heptane", "label": "fuel:n_heptane", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: fuel:n_heptane"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_txt", "id": "PSI-10_Raw Data_21301J4_TP", "label": "PSI-10_Raw Data_21301J4_TP.txt", "shape": "dot", "size": 20, "title": "ID: PSI-10_Raw Data_21301J4_TP\nT\u00edtulo: Prueba de Ignici\u00f3n y Estabilizaci\u00f3n del Combustible para Test Point 21301J4 (PSI-10)\nResumen: Este archivo contiene datos brutos de una prueba de ignici\u00f3n y estabilizaci\u00f3n del combustible para el Test Point 21301J4, identificado como PSI-10. La secuencia incluye la pre-ignici\u00f3n, los puntos de estabilizaci\u00f3n del fuego (Flame Stabilization), y otros eventos clave en el ciclo de prueba."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "rack:msg_spice", "label": "rack:msg_spice", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: rack:msg_spice"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_csv", "id": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm", "label": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm.csv", "shape": "dot", "size": 20, "title": "ID: PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm\nT\u00edtulo: An\u00e1lisis de Extinci\u00f3n del Di\u00e1metro para Alcanos a una Presi\u00f3n Atmosf\u00e9rica\nResumen: Los datos en este archivo CSV contienen mediciones experimentales y simuladas de la extinci\u00f3n del di\u00e1metro (Dext) para diferentes alcanos a una presi\u00f3n atmosf\u00e9rica. Las columnas incluyen el n\u00famero experimental o simulado, as\u00ed como los valores observados para C7, C10 y C12 en t\u00e9rminos de Do (di\u00e1metro oscilante), Dext_HF (extinci\u00f3n del di\u00e1metro utilizando la t\u00e9cnica HF) y Dext_CF (extinci\u00f3n del di\u00e1metro utilizando la t\u00e9cnica CF)."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "env:standard_1atm_pressure", "label": "env:standard_1atm_pressure", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: env:standard_1atm_pressure"}, {"font": {"color": "#D1D5DB"}, "group": "archivo_csv", "id": "PSI-117_Analyzed Data_MST_2024_Radiance_Flame_Diameter", "label": "PSI-117_Analyzed Data_MST_2024_Radiance_Flame_Diameter.csv", "shape": "dot", "size": 20, "title": "ID: PSI-117_Analyzed Data_MST_2024_Radiance_Flame_Diameter\nT\u00edtulo: Datos geogr\u00e1ficos y altitudinales\nResumen: El archivo proporcionado contiene datos de latitudes, longitudes y altitudes. Estos datos parecen estar relacionados con una investigaci\u00f3n geogr\u00e1fica o un an\u00e1lisis topogr\u00e1fico en el \u00e1rea del Pilar de Detenci\u00f3n (Pillar Deetection). Los valores se presentan en coordenadas decimales para las latitudenes y longitudenes, mientras que la altura est\u00e1 dada en metros. La secuencia de los datos sugiere una medici\u00f3n continua a lo largo de un trayecto o \u00e1rea espec\u00edfica."}, {"font": {"color": "#D1D5DB"}, "group": "etiqueta", "id": "pillar:detection", "label": "pillar:detection", "shape": "dot", "size": 12, "title": "Etiqueta taxon\u00f3mica: pillar:detection"}]);
+                  edges = new vis.DataSet([{"from": "248F001_LLLUV_Camera_Settings", "to": "psi:PSI-39", "width": 1}, {"from": "248F001_LLLUV_Camera_Settings", "to": "rack:cir_acme", "width": 1}, {"from": "248F001_LLLUV_Camera_Settings", "to": "sensor:high_speed_optical_cameras", "width": 1}, {"from": "248F001_LLLUV_Camera_Settings", "to": "phenom:spherical_diffusion_flame", "width": 1}, {"from": "248F001_LLLUV_Camera_Settings", "to": "sensor:optical_imaging", "width": 1}, {"from": "248F001_LLLUV_Camera_Settings", "to": "phase:liquid_droplet", "width": 1}, {"from": "PSI-69_Experimental table_FLEX", "to": "type:ground_investigation", "width": 1}, {"from": "PSI-69_Experimental table_FLEX", "to": "relevance:lunar_habitat", "width": 1}, {"from": "C039H03_Chamber_Readings", "to": "pillar:prevention", "width": 1}, {"from": "C039H03_Chamber_Readings", "to": "type:microgravity_investigation", "width": 1}, {"from": "PSI-10_Raw Data_as run21301J4", "to": "fuel:hydrocarbon_spacecraft_materials", "width": 1}, {"from": "PSI-10_Raw Data_as run21301J4", "to": "rack:cir_acme", "width": 1}, {"from": "PSI-10_Raw Data_as run21301J4", "to": "sensor:photomultiplier_tubes_pmt", "width": 1}, {"from": "PSI-10_Raw Data_as run21301J4", "to": "psi:PSI-10", "width": 1}, {"from": "PSI-10_Raw Data_as run21301J4", "to": "phenom:flame_liftoff_extinction", "width": 1}, {"from": "PSI-10_Raw Data_as run21301J4", "to": "phase:liquid_droplet", "width": 1}, {"from": "PSI-10_Raw Data_as run21301J4", "to": "phase:gaseous", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_C12_2019_Three_Stage", "to": "type:ground_investigation", "width": 1}, {"from": "PSI-117_Analyzed Data_MST_2024_Burning_history_Flame_diameter", "to": "type:ground_investigation", "width": 1}, {"from": "PSI-117_Analyzed Data_MST_2024_Burning_history_Flame_diameter", "to": "phase:solid", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "env:reduced_cabin_pressure", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "fuel:hydrocarbon_spacecraft_materials", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "psi:PSI-117", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "env:extreme_o2", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "phenom:flame_liftoff_extinction", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "sensor:optical_imaging", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "fuel:cotton_fiberglass_blend", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_C12_Extinction_Diameter_vs_pressure", "to": "phase:gaseous", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "fuel:propane_c3h8", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "sensor:temperature_radiative_sensors", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "sensor:photomultiplier_tubes_pmt", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "sensor:thermocouples", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "phenom:flame_liftoff_extinction", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "sensor:optical_imaging", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "psi:PSI-99", "width": 1}, {"from": "248F001_Color_Camera_Settings", "to": "phase:liquid_droplet", "width": 1}, {"from": "PSI-10_Raw Data_as runAcmeCameraConfigure_2021-10-28_301_14.00.26", "to": "psi:PSI-10", "width": 1}, {"from": "PSI-10_Raw Data_as runAcmeCameraConfigure_2021-10-28_301_14.00.26", "to": "rack:cir_acme", "width": 1}, {"from": "PSI-10_Raw Data_as runAcmeCameraConfigure_2021-10-28_301_14.00.26", "to": "gravity:0g_microgravity", "width": 1}, {"from": "PSI-10_Raw Data_as runAcmeCameraConfigure_2021-10-28_301_14.00.26", "to": "phase:gaseous", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "fuel:methane_ch4", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "fuel:hydrocarbon_spacecraft_materials", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "psi:PSI-142", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "fuel:ethylene_c2h4", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "sensor:photomultiplier_tubes_pmt", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "sensor:thermocouples", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "phenom:flame_liftoff_extinction", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "fuel:n_heptane", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "phase:liquid_droplet", "width": 1}, {"from": "PSI-142_Experimental table_Data Summary Table", "to": "phase:gaseous", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "fuel:propane_c3h8", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "rack:cir_acme", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "sensor:temperature_radiative_sensors", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "psi:PSI-10", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "phenom:flame_liftoff_extinction", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "rack:msg_spice", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "sensor:optical_imaging", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "phase:liquid_droplet", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "gravity:0g_microgravity", "width": 1}, {"from": "PSI-10_Raw Data_21301J4_TP", "to": "phase:gaseous", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm", "to": "fuel:hydrocarbon_spacecraft_materials", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm", "to": "psi:PSI-117", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm", "to": "env:standard_1atm_pressure", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm", "to": "phenom:flame_liftoff_extinction", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm", "to": "sensor:optical_imaging", "width": 1}, {"from": "PSI-117_Analyzed Data_PROCI_2023_Alkane_Extinction_Diameter_1atm", "to": "phase:gaseous", "width": 1}, {"from": "PSI-117_Analyzed Data_MST_2024_Radiance_Flame_Diameter", "to": "pillar:detection", "width": 1}, {"from": "PSI-117_Analyzed Data_MST_2024_Radiance_Flame_Diameter", "to": "type:ground_investigation", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {"nodes": {"borderWidth": 0, "borderWidthSelected": 2, "font": {"color": "#9CA3AF", "face": "Inter,-apple-system,sans-serif", "size": 13}}, "edges": {"color": {"color": "rgba(255,255,255,0.35)", "highlight": "rgba(252,61,33,0.9)", "hover": "rgba(255,255,255,0.75)"}, "width": 1.5, "smooth": {"type": "continuous"}}, "interaction": {"hover": true}, "physics": {"enabled": true, "solver": "barnesHut", "barnesHut": {"gravitationalConstant": -4500, "centralGravity": 0.08, "springLength": 220, "springConstant": 0.015, "damping": 0.04, "avoidOverlap": 0.2}, "minVelocity": 0.01, "stabilization": {"enabled": false}}};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    
+<script>
+  window.addEventListener('load', function() {
+    if (typeof network === 'undefined') return;
+
+    const nodesDataset = network.body.data.nodes;
+    const edgesDataset = network.body.data.edges;
+
+    // Guardar estado original de cada nodo para poder restaurarlo
+    const originalNodes = {};
+    nodesDataset.get().forEach(n => {
+      originalNodes[String(n.id)] = {
+        color: n.color,
+        size: n.size || 16,
+        fontColor: (n.font && n.font.color) || '#9CA3AF',
+        fontSize: (n.font && n.font.size) || 13
+      };
+    });
+
+    // Flotación continua en microgravedad
+    let t = 0;
+    network.on("beforeDrawing", function() {
+      t += 0.015;
+      const nodeIds = Object.keys(network.body.nodes);
+      for (let i = 0; i < nodeIds.length; i++) {
+        const node = network.body.nodes[nodeIds[i]];
+        if (node && !node.options.fixed) {
+          node.vx += Math.sin(t + i) * 0.015;
+          node.vy += Math.cos(t + i * 1.3) * 0.015;
+        }
+      }
+    });
+
+    setInterval(function() {
+      network.startSimulation();
+    }, 2000);
+
+    // Escuchar resultados de búsqueda desde React (LibraryPage.jsx)
+    window.addEventListener('message', function(event) {
+      const msg = event.data;
+      if (!msg || !msg.type) return;
+
+      if (msg.type === 'HIGHLIGHT_NODES') {
+        const matchedSet = new Set((msg.nodeIds || []).map(String));
+        const neighborSet = new Set();
+        const existingMatchedIds = [];
+
+        nodesDataset.get().forEach(n => {
+          const idStr = String(n.id);
+          if (matchedSet.has(idStr)) {
+            existingMatchedIds.push(n.id);
+            network.getConnectedNodes(n.id).forEach(nb => neighborSet.add(String(nb)));
+          }
+        });
+
+        // Actualizar nodos: iluminar coincidencias, resaltar etiquetas vecinas y atenuar el resto
+        const updatedNodes = nodesDataset.get().map(n => {
+          const idStr = String(n.id);
+          const orig = originalNodes[idStr];
+          if (matchedSet.has(idStr)) {
+            return {
+              id: n.id,
+              opacity: 1,
+              size: orig.size * 1.65,
+              color: orig.color,
+              shadow: { enabled: true, color: '#fc3d21', size: 28, x: 0, y: 0 },
+              font: { color: '#ffffff', size: 16, bold: true }
+            };
+          }
+          if (neighborSet.has(idStr)) {
+            return {
+              id: n.id,
+              opacity: 0.9,
+              size: orig.size * 1.15,
+              color: orig.color,
+              shadow: { enabled: true, color: 'rgba(234, 179, 8, 0.5)', size: 12, x: 0, y: 0 },
+              font: { color: '#fde047', size: 14, bold: false }
+            };
+          }
+          return {
+            id: n.id,
+            opacity: 0.14,
+            size: orig.size * 0.85,
+            shadow: { enabled: false },
+            font: { color: 'rgba(156, 163, 175, 0.18)', size: orig.fontSize }
+          };
+        });
+        nodesDataset.update(updatedNodes);
+
+        // Iluminar las conexiones de los nodos encontrados
+        const updatedEdges = edgesDataset.get().map(e => {
+          const isRelevant = matchedSet.has(String(e.from)) || matchedSet.has(String(e.to));
+          return {
+            id: e.id,
+            color: { color: isRelevant ? 'rgba(252, 61, 33, 0.8)' : 'rgba(255, 255, 255, 0.04)' },
+            width: isRelevant ? 2.4 : 1
+          };
+        });
+        edgesDataset.update(updatedEdges);
+
+        // Enfocar cámara suavemente sobre los resultados
+        if (existingMatchedIds.length > 0) {
+          network.fit({
+            nodes: existingMatchedIds,
+            animation: { duration: 850, easingFunction: 'easeInOutQuad' }
+          });
+        }
+      }
+
+      if (msg.type === 'RESET_HIGHLIGHT') {
+        const restoredNodes = nodesDataset.get().map(n => {
+          const orig = originalNodes[String(n.id)];
+          return {
+            id: n.id,
+            opacity: 1,
+            size: orig.size,
+            color: orig.color,
+            shadow: { enabled: false },
+            font: { color: orig.fontColor, size: orig.fontSize, bold: false }
+          };
+        });
+        nodesDataset.update(restoredNodes);
+
+        const restoredEdges = edgesDataset.get().map(e => ({
+          id: e.id,
+          color: { color: 'rgba(255, 255, 255, 0.35)' },
+          width: 1.5
+        }));
+        edgesDataset.update(restoredEdges);
+
+        network.fit({ animation: { duration: 700, easingFunction: 'easeInOutQuad' } });
+      }
+    });
+  });
+</script>
+</body>
+
+</html>
