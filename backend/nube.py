@@ -33,7 +33,7 @@ for doc_id, title, doc_type, summary, metadata_json in documentos:
         archivos_validos_ids.add(doc_id)
         
         label = filename if filename else (title if title else str(doc_id))
-        hover_title = f"ID: {doc_id}\nTítulo: {title}\nResumen: {summary}"
+        hover_title = f"ID: {doc_id}\nTitle: {title}\nSummary: {summary}"
         
         if filename_lower.endswith('.csv'):
             color_nodo = '#fc3d21'  # Rojo NASA
@@ -59,7 +59,7 @@ for doc_id, tag in relaciones_validas:
     if not G.has_node(tag):
         G.add_node(tag, 
                    label=tag, 
-                   title=f"Etiqueta taxonómica: {tag}", 
+                   title=f"Taxonomy tag: {tag}", 
                    group='etiqueta',
                    color='#eab308', # Amarillo cálido
                    size=12)

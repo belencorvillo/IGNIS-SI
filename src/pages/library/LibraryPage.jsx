@@ -5,6 +5,7 @@ import { FUEL_PHASES, FUEL_PHASE_LABELS, HARDWARE_RACKS, RACK_LABELS, SAFETY_PIL
 import CompareModal from './CompareModal'
 import { getYoloVideo } from '../../shared/yoloVideos'
 import KnowledgeGraph3D from './KnowledgeGraph3D'
+import NodeDetails from './NodeDetails'
 import { GROUP_STYLE } from './graphStyle'
 
 const MAX_COMPARE = 4
@@ -102,27 +103,26 @@ function OllamaThinkingIndicator() {
     <div
       role="status"
       aria-live="polite"
-      className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-4 py-3.5"
+      className="mb-6 flex items-start gap-3 rounded-2xl border border-line bg-surface px-4 py-3.5"
     >
-      <div className="flex min-w-0 items-center gap-3.5">
+      <div className="flex min-w-0 items-start gap-3">
         <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line-strong text-nasa-red">
           <Sparkles size={15} className="animate-pulse" aria-hidden="true" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
-            <span>Reasoning semantic search</span>
+            <span>Semantic search</span>
             <span className="inline-flex items-center gap-1 pt-1">
               <span className="h-1 w-1 animate-bounce rounded-full bg-nasa-red [animation-delay:-0.3s]" />
               <span className="h-1 w-1 animate-bounce rounded-full bg-nasa-red [animation-delay:-0.15s]" />
               <span className="h-1 w-1 animate-bounce rounded-full bg-nasa-red" />
             </span>
           </div>
-          <p className="truncate text-[12px] text-muted transition-opacity duration-300">
+          <p className="mt-0.5 text-[12px] leading-snug text-muted transition-opacity duration-300">
             {THINKING_STEPS[stepIndex]}
           </p>
         </div>
       </div>
-      <span className="label hidden shrink-0 sm:inline">Ollama · PSI</span>
     </div>
   )
 }
@@ -141,6 +141,8 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
   const [comparing, setComparing] = useState(false)
 
   const iframeRef = useRef(null)
+  // Node the graph camera has flown to (shown in the left column instead of the title).
+  const [graphFocus, setGraphFocus] = useState(null)
   const [listOpen, setListOpen] = useState(false)
   const abortControllerRef = useRef(null)
 
@@ -318,7 +320,7 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
             </button>
           )}
         </div>
-        <Button type="submit" variant="primary" disabled={isSearching || !inputQuery.trim()} className="w-full">
+        <Button type="submit" variant="light" disabled={isSearching || !inputQuery.trim()} className="w-full">
           {isSearching ? 'Searching…' : 'Search'}
         </Button>
       </form>
@@ -386,28 +388,42 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
     <>
       <section aria-label="Knowledge graph" className="relative overflow-hidden lg:h-[calc(100svh-64px)] lg:min-h-[680px]">
         <div className="relative h-[640px] lg:absolute lg:inset-0 lg:h-auto">
+          {/* Resting distance 15.3: two mouse-wheel zoom steps closer than 17 (0.95² ≈ 0.9). */}
           <KnowledgeGraph3D
             highlightIds={graphHighlightIds}
             matchInfo={graphMatchInfo}
-            onSelectNode={openPsiTag}
-            cardPosition="bottom-5 left-[calc(50%-180px)]"
-            cameraZ={17}
+            onFocus={setGraphFocus}
+            cameraZ={15.3}
           />
           {/* Keeps the title legible over the graph, as in the Simulator's habitat view. */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[560px] max-w-full bg-gradient-to-r from-ground/90 via-ground/60 to-transparent" aria-hidden="true" />
+          {/* Denser while node details are open, so their text never mixes with the graph. */}
+          <div
+            className={`pointer-events-none absolute inset-y-0 left-0 z-10 max-w-full bg-gradient-to-r transition-[width] duration-500 ${
+              graphFocus ? 'w-[720px] from-ground from-40% via-ground/85 to-transparent' : 'w-[560px] from-ground/90 via-ground/60 to-transparent'
+            }`}
+            aria-hidden="true"
+          />
 
           <div className="pointer-events-none relative z-20 mx-auto flex h-full max-w-[1440px] flex-col px-4 pt-8 md:px-8 md:pt-12">
             <div className="flex flex-wrap items-start justify-between gap-6">
+              {graphFocus ? (
+                <div key={graphFocus.node.id} className="pointer-events-auto">
+                  <NodeDetails focus={graphFocus} onOpenInvestigation={openPsiTag} />
+                </div>
+              ) : (
               <div className="pointer-events-auto rise">
                 <div className="label mb-4">Library · NASA PSI</div>
                 <h1 className="text-[clamp(44px,7vw,96px)] font-light leading-[0.95]">
-                  Combustion,
+                  Combustion
                   <br />
-                  catalogued
+                  Science
+                  <br />
+                  Catalogue
                 </h1>
                 <p className="mt-5 hidden max-w-[34ch] text-muted sm:block">Search microgravity fire experiments in plain words, and watch their raw data light up.</p>
-                <dl className="mt-28 hidden w-fit gap-5 text-[14px] lg:grid">{legend}</dl>
+                <dl className="mt-12 hidden w-fit gap-5 text-[14px] lg:grid">{legend}</dl>
               </div>
+              )}
               <div className="pointer-events-auto hidden w-[300px] lg:block">{searchPanel}</div>
             </div>
 
@@ -419,14 +435,17 @@ export default function LibraryPage({ investigations, onOpenDetail }) {
             >
               {isSearchCompleted ? 'See the results' : 'See all investigations'} <ChevronDown size={14} aria-hidden="true" />
             </a>
-            <span className="label pointer-events-none absolute bottom-4 left-8 hidden md:block lg:bottom-8">
+            <span className={`label pointer-events-none absolute bottom-4 left-8 hidden lg:bottom-8 ${graphFocus ? '' : 'md:block'}`}>
               Click a node for details · drag to move · click scene to zoom
             </span>
           </div>
         </div>
 
         {/* Mobile: search panel sits below the graph */}
-        <div className="px-4 py-6 lg:hidden">{searchPanel}</div>
+        <div className="space-y-6 px-4 py-6 lg:hidden">
+          {graphFocus && <NodeDetails key={graphFocus.node.id} focus={graphFocus} onOpenInvestigation={openPsiTag} />}
+          {searchPanel}
+        </div>
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-40 pt-24 md:px-8 md:pt-32">

@@ -4,18 +4,19 @@ import { useCallback, useEffect, useState } from 'react'
 import SimulatorPage from './pages/simulator/SimulatorPage'
 import LibraryPage from './pages/library/LibraryPage'
 import EarthPage from './pages/earth/EarthPage'
+import DataPage from './pages/data/DataPage'
 import AboutPage from './pages/about/AboutPage'
 import CiteModal from './shared/CiteModal'
 import InvestigationDetail from './shared/InvestigationDetail'
 import { Button } from './shared/ui'
-import { SOURCE_LABELS, loadInvestigations } from './shared/catalog'
+import { loadInvestigations } from './shared/catalog'
 import { MODEL_CREDITS } from './shared/credits'
 import { DEFAULT_MODE, DEFAULT_PARAMS } from './pages/simulator/simulation'
 
 const PAGES = [
   { id: 'simulator', label: 'Simulator' },
   { id: 'library', label: 'Library' },
-  { id: 'earth', label: 'On Earth' },
+  { id: 'earth', label: 'Applications' },
 ]
 
 function Wordmark() {
@@ -57,7 +58,6 @@ export default function App() {
     setPage(id)
     window.scrollTo({ top: 0 })
   }
-  const src = SOURCE_LABELS[source]
 
   return (
     <div className="grain min-h-screen">
@@ -66,8 +66,8 @@ export default function App() {
       </a>
 
       <header className="fixed inset-x-0 top-0 z-40 h-16 border-b border-line bg-ground">
-        <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between gap-4 px-4 md:px-8">
-          <button type="button" onClick={() => go('simulator')} aria-label="IGNIS-SI home" className="rounded-full">
+        <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between gap-4 px-4 sm:grid sm:grid-cols-[1fr_auto_1fr] md:px-8">
+          <button type="button" onClick={() => go('simulator')} aria-label="IGNIS-SI home" className="justify-self-start rounded-full">
             <Wordmark />
           </button>
           <nav aria-label="Main" className="flex items-center gap-1">
@@ -82,14 +82,21 @@ export default function App() {
                 }`}
               >
                 {p.label}
-                <span className={`mx-auto mt-0.5 block h-px w-4 transition-colors ${page === p.id ? 'bg-nasa-red' : 'bg-transparent'}`} aria-hidden="true" />
               </button>
             ))}
           </nav>
-          <div className="hidden items-center gap-1 sm:flex">
+          <div className="hidden items-center gap-1 justify-self-end sm:flex">
             <Button variant="secondary" className="h-9 px-4 text-[14px]" onClick={() => setCiteOpen(true)} disabled={!investigations.length}>
               Cite data
             </Button>
+            <button
+              type="button"
+              onClick={() => go('data')}
+              aria-current={page === 'data' ? 'page' : undefined}
+              className={`h-9 whitespace-nowrap rounded-full px-4 text-[14px] transition-colors duration-150 ${page === 'data' ? 'text-ink' : 'text-faint hover:text-ink'}`}
+            >
+              Get data
+            </button>
             <button
               type="button"
               onClick={() => go('about')}
@@ -123,32 +130,39 @@ export default function App() {
               />
             )}
             {page === 'library' && <LibraryPage investigations={investigations} onOpenDetail={setDetail} />}
+            {page === 'data' && <DataPage investigations={investigations} params={params} source={source} />}
             {page === 'earth' && <EarthPage investigations={investigations} onOpenDetail={setDetail} />}
           </>
         )}
       </main>
 
       <footer className="border-t border-line">
-        <div className="mx-auto grid max-w-[1440px] gap-8 px-4 py-12 md:grid-cols-[1fr_1fr_auto] md:px-8">
-          <p className="measure text-[14px] text-muted">
-            Rocket engines and propellants are out of scope: their high flow velocities make combustion effectively gravity-independent.
-          </p>
-          <p className="measure text-[14px] text-muted">
-            Data from NASA Physical Sciences Informatics (PSI). Content marked “SI-assisted analysis” was produced with Space Intelligence assistance.
-            Built for NASA Space Apps 2026 — not an official NASA product.
-          </p>
-          <p className="measure text-[13px] text-faint md:col-span-2">
-            3D models:{' '}
-            {[MODEL_CREDITS.cabin, MODEL_CREDITS.habitat].map((c, i) => (
+        <div className="mx-auto max-w-[1440px] px-4 py-12 md:px-8">
+          <div className="grid gap-6 md:grid-cols-2 md:gap-12">
+            <p className="text-[14px] text-muted">
+              Rocket engines and propellants are out of scope: their high flow velocities make combustion effectively gravity-independent.
+            </p>
+            <p className="text-[14px] text-muted">
+              Data from NASA Physical Sciences Informatics (PSI). Content marked “SI-assisted analysis” was produced with super intelligence (SI)
+              assistance. Built for NASA Space Apps 2026 — not an official NASA product.
+            </p>
+          </div>
+          <p className="mt-8 border-t border-line pt-6 text-[13px] leading-relaxed text-faint">
+            <span className="label mr-2">3D models</span>
+            {[MODEL_CREDITS.cabin, MODEL_CREDITS.habitat, ...Object.values(MODEL_CREDITS).filter((c) => c !== MODEL_CREDITS.cabin && c !== MODEL_CREDITS.habitat)].map((c, i) => (
               <span key={c.url}>
                 {i > 0 && ' · '}
                 <a href={c.url} target="_blank" rel="noreferrer" className="link text-faint">
                   {c.title}
                 </a>{' '}
                 by{' '}
-                <a href={c.authorUrl} target="_blank" rel="noreferrer" className="link text-faint">
-                  {c.author}
-                </a>{' '}
+                {c.authorUrl ? (
+                  <a href={c.authorUrl} target="_blank" rel="noreferrer" className="link text-faint">
+                    {c.author}
+                  </a>
+                ) : (
+                  c.author
+                )}{' '}
                 (
                 <a href={c.licenseUrl} target="_blank" rel="noreferrer" className="link text-faint">
                   {c.license}
@@ -157,17 +171,15 @@ export default function App() {
               </span>
             ))}
           </p>
-          <div className="flex flex-col items-start gap-2 md:items-end">
-            {src && (
-              <span className="label flex items-center gap-2" title={src.detail}>
-                <span className={`h-1.5 w-1.5 rounded-full ${source === 'mock' ? 'bg-ember' : 'bg-sky'}`} aria-hidden="true" />
-                {src.label} · {investigations.length} investigations
-              </span>
-            )}
-            <button type="button" onClick={() => setCiteOpen(true)} className="link text-[14px] sm:hidden">
+          {/* On phones the header buttons are hidden, so they live here. */}
+          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 sm:hidden">
+            <button type="button" onClick={() => setCiteOpen(true)} className="link text-[14px]">
               Cite data
             </button>
-            <button type="button" onClick={() => go('about')} className="link text-[14px] sm:hidden">
+            <button type="button" onClick={() => go('data')} className="link text-[14px]">
+              Get data
+            </button>
+            <button type="button" onClick={() => go('about')} className="link text-[14px]">
               About us
             </button>
           </div>

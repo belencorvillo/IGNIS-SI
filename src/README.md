@@ -15,10 +15,15 @@ src/
 │   │   ├── CompareModal.jsx    "What changed / what stayed the same" comparison
 │   │   └── search.js           Local search with domain synonyms
 │   │
-│   ├── earth/              ← On Earth tab
+│   ├── earth/              ← Applications tab (next-gen equipment + fire safety on Earth)
 │   │   ├── EarthPage.jsx       Page layout
-│   │   └── spinoffs.js         Text of the three spin-off blocks (edit content here)
+│   │   ├── EarthStage.jsx      3D Earth stage
+│   │   ├── ModelStage.jsx      3D object shown in each application pop-up
+│   │   └── applications.js     Content of both blocks: documented NASA work, sources, 3D objects, PSI evidence
 │   │
+│   ├── data/               ← Get data (header): filter the catalog, download CSV / JSON for models
+│   │   ├── DataPage.jsx        Filters, preview table, downloads
+│   │   └── exportData.js       Columns, units, CSV / JSON builders
 │   └── about/              ← About us (header, right of "Cite data")
 │       ├── AboutPage.jsx       Page layout
 │       └── team.js             Names, one-line descriptions, LinkedIn links (photos go in public/team/<id>.jpg)
@@ -40,7 +45,7 @@ src/
 |---|---|---|
 | `src/pages/simulator/` | Simulator owner | Everything in the folder |
 | `src/pages/library/` | Library owner | Everything in the folder |
-| `src/pages/earth/` | On Earth owner | Everything in the folder |
+| `src/pages/earth/` | Applications owner | Everything in the folder |
 | `src/pages/about/` | Whole team | Your own entry in `team.js` and your photo |
 | `src/shared/`, `App.jsx`, `index.css` | Whole team | Only after telling the others |
 

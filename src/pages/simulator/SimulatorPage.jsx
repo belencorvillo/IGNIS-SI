@@ -214,7 +214,8 @@ function Stage({ params, setParams, mode, selectScene, site, selectSite, presetI
       <div className="pointer-events-none relative z-10 mx-auto flex h-full max-w-[1440px] flex-col px-4 pt-8 md:px-8 md:pt-12">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="pointer-events-auto rise">
-            <div className="label mb-4 flex items-center gap-3">
+            {/* Fixed height: the badge on the right only appears in some scenes, so the title never shifts. */}
+            <div className="label mb-4 flex h-6 items-center gap-3">
               <span>Digital twin · {VIEW_MODES[mode].label}</span>
               {mode === 'habitat' && <ModelCredit credit={MODEL_CREDITS.habitat} />}
               {mode === 'chamber' && <SIDisclosure />}

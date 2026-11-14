@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Html, OrbitControls, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js'
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js'
-import { ArrowUpRight, X } from 'lucide-react'
-import { SITag } from '../../shared/ui'
 import { GROUP_STYLE, isInvestigationTag, nodeInfo, nodeKind, nodeLabel } from './graphStyle'
 
 /*
@@ -94,10 +92,15 @@ function useSimulation(graph) {
   return useMemo(() => {
     let seed = 11
     const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) * 2 - 1
-    // Start compressed at the centre so the graph "blooms" open on load.
     const pos = graph.nodes.map(() => new THREE.Vector3(rand(), rand(), rand()).multiplyScalar(0.35))
     const vel = graph.nodes.map(() => new THREE.Vector3())
-    return { pos, vel, alpha: 1, pinned: -1 }
+    // Settle the layout before the first frame so the graph appears calm (no wobble);
+    // the camera intro provides the motion instead.
+    const sim = { pos, vel, alpha: 1, pinned: -1 }
+    for (let k = 0; k < 420; k++) stepSimulation(sim, graph)
+    vel.forEach((v) => v.set(0, 0, 0))
+    sim.alpha = 0.06
+    return sim
   }, [graph])
 }
 
@@ -176,7 +179,7 @@ function GraphNode({ node, groupRef, state, showLabel, onPointerDown, onPointerM
         <meshStandardMaterial color={node.color} emissive={node.color} emissiveIntensity={node.kind === 'txt' ? 0.75 : 0.22} roughness={0.5} metalness={0.05} transparent opacity={1} />
       </mesh>
       {showLabel && (
-        <Html position={[0, node.radius + 0.12, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none', transform: 'translateY(-70%)' }}>
+        <Html position={[0, node.radius + 0.12, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none', transform: 'translateY(-70%)' }}>
           <span
             className={`block whitespace-nowrap rounded-full border px-2.5 py-1 font-mono text-[11px] leading-none transition-opacity duration-200 ${
               state === 'match'
@@ -196,7 +199,7 @@ function GraphNode({ node, groupRef, state, showLabel, onPointerDown, onPointerM
   )
 }
 
-function GraphScene({ graph, highlightIds, selected, onPick, zoom }) {
+function GraphScene({ graph, highlightIds, selected, onPick, onArrive, zoom }) {
   const sim = useSimulation(graph)
   const camera = useThree((s) => s.camera)
   const size = useThree((s) => s.size)
@@ -284,6 +287,22 @@ function GraphScene({ graph, highlightIds, selected, onPick, zoom }) {
     pc.needsUpdate = true
   }, [lines, particles, graph, focus, matched])
 
+  /* Camera flights: the opening glide-out and the fly-to on node click. */
+  const flight = useRef(null)
+  const homeDist = useRef(null)
+  const prevSelected = useRef(-1)
+  const tmpDir = useMemo(() => new THREE.Vector3(), [])
+  useEffect(() => {
+    if (!controls || homeDist.current == null) return
+    const currentDist = camera.position.distanceTo(controls.target)
+    if (selected >= 0) {
+      flight.current = { t: 0, dur: 1.1, fromTarget: controls.target.clone(), fromDist: currentDist, toDist: 3.2, toNode: selected }
+    } else if (prevSelected.current >= 0) {
+      flight.current = { t: 0, dur: 1.1, fromTarget: controls.target.clone(), fromDist: currentDist, toDist: homeDist.current, toNode: -1 }
+    }
+    prevSelected.current = selected
+  }, [selected, controls, camera])
+
   /* Per-frame: physics, node positions, edge and particle geometry, camera focus. */
   const look = useMemo(() => new THREE.Vector3(), [])
   useFrame((s, delta) => {
@@ -314,8 +333,32 @@ function GraphScene({ graph, highlightIds, selected, onPick, zoom }) {
         matched.forEach((i) => look.add(pos[i]))
         look.divideScalar(matched.size)
       } else look.set(0, 0, 0)
-      controls.target.lerp(look, 0.04)
-      controls.autoRotate = hovered < 0 && selected < 0 && !dragging
+
+      // First frame: start right inside the graph and glide out to the resting distance.
+      if (homeDist.current == null) {
+        homeDist.current = camera.position.distanceTo(controls.target)
+        tmpDir.subVectors(camera.position, controls.target).normalize()
+        camera.position.copy(controls.target).addScaledVector(tmpDir, 2.2)
+        flight.current = { t: 0, dur: 2.6, fromTarget: controls.target.clone(), fromDist: 2.2, toDist: homeDist.current, toNode: -1 }
+      }
+
+      const f = flight.current
+      if (f) {
+        f.t = Math.min(1, f.t + delta / f.dur)
+        const e = f.t < 0.5 ? 4 * f.t ** 3 : 1 - (-2 * f.t + 2) ** 3 / 2 // easeInOutCubic
+        tmpDir.subVectors(camera.position, controls.target).normalize()
+        controls.target.lerpVectors(f.fromTarget, f.toNode >= 0 ? pos[f.toNode] : look, e)
+        camera.position.copy(controls.target).addScaledVector(tmpDir, THREE.MathUtils.lerp(f.fromDist, f.toDist, e))
+        if (f.t >= 1) {
+          if (f.toNode >= 0) onArrive?.(f.toNode)
+          flight.current = null
+        }
+      } else if (selected >= 0) {
+        controls.target.lerp(pos[selected], 0.1) // keep the selected node centred as the graph breathes
+      } else {
+        controls.target.lerp(look, 0.04)
+      }
+      controls.autoRotate = hovered < 0 && selected < 0 && !dragging && !flight.current
       controls.update()
     }
   })
@@ -374,7 +417,11 @@ function GraphScene({ graph, highlightIds, selected, onPick, zoom }) {
       <primitive object={particles.pts} />
       {graph.nodes.map((node, i) => {
         const state = stateOf(i)
-        const showLabel = node.isPsi || state === 'match' || state === 'focus' || state === 'neighbor'
+        // During a search only the highlighted nodes (and the one you point at) carry a label,
+        // so the result reads clearly; otherwise investigations and the hovered neighbourhood do.
+        const showLabel = matched.size
+          ? state === 'match' || i === hovered || i === selected
+          : state === 'focus' || state === 'neighbor' // only around the hovered / selected node
         return (
           <GraphNode
             key={node.id}
@@ -402,88 +449,20 @@ function GraphScene({ graph, highlightIds, selected, onPick, zoom }) {
   )
 }
 
-/** Card with the information the original graph showed for a node. */
-function InfoCard({ graph, index, match, onClose, onPick, onOpenInvestigation, position }) {
-  const node = graph.nodes[index]
-  const neighbors = [...graph.adjacency[index]].map((j) => ({ j, n: graph.nodes[j] }))
-  const isFile = node.kind !== 'tag'
+/** Thin ring marking the node the camera has flown to (it sits at the canvas centre). */
+function TargetRing() {
   return (
-    <aside
-      aria-label={`Details for ${node.text}`}
-      className={`rise absolute z-20 flex max-h-[calc(100%-40px)] w-[360px] max-w-[calc(100%-40px)] flex-col rounded-2xl border border-line-strong bg-surface ${position}`}
-      onPointerDown={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-start justify-between gap-3 p-5 pb-0">
-        <div className="min-w-0">
-          <span className="label flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full" style={{ background: node.color }} aria-hidden="true" />
-            {node.isPsi ? 'Investigation' : GROUP_STYLE[node.kind].label}
-          </span>
-          <h3 className="mt-2 break-words text-[17px] font-medium leading-snug text-ink">{node.info.title ?? node.text}</h3>
-          {isFile && <p className="num mt-1 break-all text-[12px] text-faint">{node.label}</p>}
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close details"
-          className="-mr-2 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-faint hover:bg-raised hover:text-ink"
-        >
-          <X size={16} aria-hidden="true" />
-        </button>
-      </div>
-
-      <div className="min-h-0 overflow-y-auto overscroll-contain p-5">
-        {match && (
-          <div className="mb-5 rounded-xl border border-nasa-red/40 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="label !text-nasa-red">Search match</span>
-              {match.score != null && <span className="num text-[13px] text-ink">score {match.score}</span>}
-            </div>
-            {match.description && <p className="mt-2 text-[14px] leading-relaxed text-muted">{match.description}</p>}
-            {match.matches && <p className="num mt-2 text-[12px] text-faint">Matches: {String(match.matches)}</p>}
-            <div className="mt-3">
-              <SITag />
-            </div>
-          </div>
-        )}
-        {node.info.summary && (
-          <div className="mb-5">
-            <SITag />
-            <p className="mt-2 whitespace-pre-line text-[14px] leading-relaxed text-muted">{node.info.summary}</p>
-          </div>
-        )}
-        <div className="label mb-2">Connected · {neighbors.length}</div>
-        <ul className="flex flex-wrap gap-1.5">
-          {neighbors.map(({ j, n }) => (
-            <li key={n.id}>
-              <button
-                type="button"
-                onClick={() => onPick(j)}
-                className="inline-flex h-7 items-center gap-1.5 rounded-full border border-line px-2.5 text-[12px] text-muted transition-colors hover:border-line-strong hover:text-ink"
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: n.color }} aria-hidden="true" />
-                {n.text}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {node.isPsi && (
-          <button
-            type="button"
-            onClick={() => onOpenInvestigation?.(node)}
-            className="mt-5 inline-flex h-10 items-center gap-1.5 rounded-full border border-line-strong px-4 text-[14px] text-ink transition-colors hover:border-ink"
-          >
-            Open investigation <ArrowUpRight size={14} aria-hidden="true" />
-          </button>
-        )}
-      </div>
-    </aside>
+    <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 -ml-7 -mt-7 h-14 w-14" aria-hidden="true">
+      <span className="ring-in block h-full w-full rounded-full border border-ink/50" />
+    </div>
   )
 }
 
-export default function KnowledgeGraph3D({ highlightIds = [], matchInfo = {}, onSelectNode, cardPosition = 'bottom-5 right-5', cameraZ = 10.8 }) {
+export default function KnowledgeGraph3D({ highlightIds = [], matchInfo = {}, onFocus, cameraZ = 10.8 }) {
   const [graph, setGraph] = useState(null)
   const [selected, setSelected] = useState(-1)
+  // The label appears only once the camera has finished flying to the node.
+  const [arrived, setArrived] = useState(-1)
   const [error, setError] = useState(false)
   const [zoom, setZoom] = useState(false)
 
@@ -497,6 +476,39 @@ export default function KnowledgeGraph3D({ highlightIds = [], matchInfo = {}, on
       alive = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!graph || selected < 0 || arrived !== selected) {
+      onFocus?.(null)
+      return
+    }
+    const node = graph.nodes[selected]
+    onFocus?.({
+      node,
+      kindLabel: node.isPsi ? 'Investigation' : GROUP_STYLE[node.kind].label,
+      match: matchInfo[node.id],
+      neighbors: [...graph.adjacency[selected]].map((j) => ({ index: j, id: graph.nodes[j].id, text: graph.nodes[j].text, color: graph.nodes[j].color })),
+      pick: (j) => pickRef.current(j),
+      close: () => closeRef.current(),
+    })
+  }, [graph, selected, arrived, matchInfo, onFocus])
+
+  const pick = (i) => {
+    if (i === selected) return // already there: keep the label open
+    setArrived(-1)
+    setSelected(i)
+  }
+  const close = () => {
+    setArrived(-1)
+    setSelected(-1)
+  }
+  // Stable handles for the page-side details panel.
+  const pickRef = useRef(pick)
+  const closeRef = useRef(close)
+  useLayoutEffect(() => {
+    pickRef.current = pick
+    closeRef.current = close
+  })
 
   return (
     <div
@@ -513,24 +525,14 @@ export default function KnowledgeGraph3D({ highlightIds = [], matchInfo = {}, on
           dpr={[1, 2]}
           gl={{ antialias: true, alpha: true }}
           aria-label="3D knowledge graph of PSI raw files and tags"
-          onPointerMissed={() => setSelected(-1)}
+          onPointerMissed={close}
         >
-          <GraphScene graph={graph} highlightIds={highlightIds} selected={selected} onPick={setSelected} zoom={zoom} />
+          <GraphScene graph={graph} highlightIds={highlightIds} selected={selected} onPick={pick} onArrive={setArrived} zoom={zoom} />
         </Canvas>
-      )}
-      {graph && selected >= 0 && (
-        <InfoCard
-          graph={graph}
-          index={selected}
-          match={matchInfo[graph.nodes[selected].id]}
-          onClose={() => setSelected(-1)}
-          onPick={setSelected}
-          onOpenInvestigation={onSelectNode}
-          position={cardPosition}
-        />
       )}
       {/* Soft vignette to frame the scene */}
       <div className="pointer-events-none absolute inset-0 z-10" style={{ boxShadow: 'inset 0 0 120px 40px #08090c' }} aria-hidden="true" />
+      {graph && selected >= 0 && arrived === selected && <TargetRing />}
     </div>
   )
 }

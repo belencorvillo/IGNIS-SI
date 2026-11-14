@@ -1,9 +1,9 @@
 // Visual vocabulary for the knowledge graph produced by backend/nube.py.
-// Same three groups as the original vis-network graph, in NASA's corporate colours:
-// NASA Red, NASA Blue and the silver/grey of the palette (PMS 877, approximated for screens).
+// Same three groups as the original vis-network graph, in NASA's classic navy-and-gold
+// pairing (NASA Blue + yellow) with the palette's silver/grey for tags. Colours only — no logo.
 
 export const GROUP_STYLE = {
-  csv: { color: '#fc3d21', label: 'Raw data (CSV)' }, // NASA Red
+  csv: { color: '#f4c21b', label: 'Raw data (CSV)' }, // NASA yellow
   txt: { color: '#0b3d91', label: 'Raw data (TXT)' }, // NASA Blue
   tag: { color: '#a7a9ac', label: 'Taxonomy tag' }, // PMS 877 silver
 }
@@ -28,15 +28,16 @@ export function nodeLabel(node) {
 }
 
 /**
- * The info the original graph showed in its tooltip ("ID / Título / Resumen"
- * for files, "Etiqueta taxonómica" for tags), split into fields.
+ * The info the original graph showed in its tooltip ("ID / Title / Summary" for
+ * files, "Taxonomy tag" for tags), split into fields. Older Spanish labels
+ * ("Título / Resumen") are still accepted.
  */
 export function nodeInfo(node) {
   const text = node.title ?? ''
-  const field = (key) => text.match(new RegExp(`^${key}:\\s*(.*)$`, 'm'))?.[1]?.trim() ?? null
-  const summaryAt = text.search(/^Resumen:/m)
+  const field = (key) => text.match(new RegExp(`^(?:${key}):\\s*(.*)$`, 'm'))?.[1]?.trim() ?? null
+  const summaryAt = text.search(/^(?:Summary|Resumen):/m)
   return {
-    title: field('Título'),
-    summary: summaryAt >= 0 ? text.slice(summaryAt).replace(/^Resumen:\s*/, '').trim() : null,
+    title: field('Title|Título'),
+    summary: summaryAt >= 0 ? text.slice(summaryAt).replace(/^(?:Summary|Resumen):\s*/, '').trim() : null,
   }
 }

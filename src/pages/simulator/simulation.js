@@ -251,7 +251,7 @@ export function advisory({ o2, pressure, airflow, gravity }, catalog = {}) {
 export function flameRegime({ o2, airflow, gravity }) {
   if (o2 >= 75) return { name: 'Inverse (inside-out) flame', ref: 'ACME CFI-G · PSI-159' }
   if (gravity === 0 && airflow < 1) return { name: 'Spherical diffusion flame (0g)', ref: 'ACME Flame Design · PSI-10' }
-  if (gravity === 0) return { name: 'Forced-flow flame, tilted downstream', ref: 'SPICE / BASS-II · PSI-107, PSI-26' }
+  if (gravity === 0) return { name: 'Forced-flow flame, tilted downstream', ref: 'SPICE / BASS-II · PSI-107, PSI-25' }
   if (gravity < 1) return { name: 'Partial-g buoyant flame (bounded)', ref: '0g ↔ 1g, E-FIELD proxy · PSI-22' }
   return { name: 'Buoyant teardrop flame (1g reference)', ref: 'Ground reference' }
 }

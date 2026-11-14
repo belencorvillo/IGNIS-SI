@@ -11,6 +11,7 @@ const BTN_BASE =
 export function Button({ variant = 'secondary', className = '', children, ...props }) {
   const styles = {
     primary: 'bg-nasa-red text-ground hover:bg-nasa-red-hover font-semibold',
+    light: 'bg-ink text-ground hover:bg-white font-semibold',
     secondary: 'border border-line-strong text-ink hover:border-ink',
     ghost: 'text-muted hover:text-ink px-3',
   }
@@ -87,7 +88,7 @@ export function SITag() {
   return (
     <span
       className="label inline-flex items-center gap-1.5 !text-sky"
-      title="Generated or classified with Space Intelligence (SI) assistance. Verify against the cited PSI source."
+      title="Generated or classified with super intelligence (SI) assistance. Verify against the cited PSI source."
     >
       <span className="h-1.5 w-1.5 rounded-full bg-sky" aria-hidden="true" />
       SI-assisted analysis

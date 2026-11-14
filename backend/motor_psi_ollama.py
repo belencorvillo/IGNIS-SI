@@ -86,12 +86,12 @@ GENERIC_DOMAIN_TERMS = {
 
 # Esquema Pydantic para el LLM Indexador de archivos raw (Etapa 1)
 class DocumentTaggingOutput(BaseModel):
-    title: str = Field(description="Título corto o identificador del archivo/experimento")
+    title: str = Field(description="Short title or identifier of the file/experiment, written in English")
     assigned_tags: List[AllowedTag] = Field(
         description="Lista de etiquetas únicas aplicables de la taxonomía (máximo 10)",
         max_length=10
     )
-    technical_summary: str = Field(description="Resumen técnico de 1 frase en español del archivo")
+    technical_summary: str = Field(description="One-sentence technical summary of the file, written in English")
 
 # Esquema Pydantic para el LLM Buscador (Etapa 2)
 class SearchQueryInference(BaseModel):
@@ -103,7 +103,7 @@ class SearchQueryInference(BaseModel):
         description="Etiquetas relacionadas o complementarias que enriquecen la búsqueda (peso medio, máx 5)",
         max_length=5
     )
-    reasoning: str = Field(description="Explicación breve en español de por qué se eligieron estas etiquetas")
+    reasoning: str = Field(description="Short explanation, written in English, of why these tags were chosen")
 
 
 # =====================================================================
@@ -431,7 +431,8 @@ def extract_tags_with_ollama(text_content: str, filename: Optional[str] = None) 
         "y una lista de etiquetas exactas y únicas correspondientes a la taxonomía permitida. "
         "Si el nombre de archivo incluye un identificador PSI (ej. PSI-10, PSI-142), incluye SIEMPRE su etiqueta "
         "'psi:PSI-XX' correspondiente. Presta atención al hardware (Acme -> rack:cir_acme, SPICE -> rack:msg_spice, "
-        "MDCA -> rack:cir_mdca) y a los sensores, fase del combustible y fenómenos físicos."
+        "MDCA -> rack:cir_mdca) y a los sensores, fase del combustible y fenómenos físicos. "
+        "IMPORTANT: write the title and the technical summary in English."
     )
 
     if filename:
@@ -726,13 +727,14 @@ def search_experiments(user_query: str, top_k_files: int = 5, top_k_experiments:
         "1. Si el usuario menciona un experimento o acrónimo (ej. 'psi10', 'FLEX', 'Flame Extinguishment', 'BRE', 'BASS', 'SLICE', 'Saffire'), "
         "incluye su etiqueta 'psi:PSI-XX' en 'required_tags' y consulta la Guía rápida inferior.\n"
         "2. Hardware/Racks: ACME -> rack:cir_acme, SPICE -> rack:msg_spice, MDCA -> rack:cir_mdca, Saffire -> rack:saffire.\n"
-        "3. Extinción / Flame Extinguishment: phenom:flame_liftoff_extinction y pillar:suppression.\n\n"
+        "3. Extinción / Flame Extinguishment: phenom:flame_liftoff_extinction y pillar:suppression.\n"
+        "4. Write the reasoning in English.\n\n"
         f"{catalog_cheat_sheet}"
     )
 
     req_tags: List[str] = []
     opt_tags: List[str] = []
-    reasoning = "Búsqueda híbrida por título, acrónimos y etiquetas."
+    reasoning = "Hybrid search by title, acronyms and tags."
 
     try:
         response = ollama.chat(
