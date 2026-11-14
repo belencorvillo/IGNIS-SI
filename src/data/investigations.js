@@ -1,294 +1,420 @@
-// ── IGNIS-SI  ·  Investigation data, match scoring & mission presets ─────────
+// ── IGNIS-SI · PSI investigation data loader, enums, presets & match scoring ──
+//
+// Load order (first one that returns a non-empty, valid list wins):
+//   1. FastAPI backend (VITE_API_URL, default http://localhost:8000)
+//   2. contracts/data/catalogo_limpio.json   (final dataset from Person 2)
+//   3. contracts/data/mock_catalogo.json    (always-available fallback)
+//
+// The contract files are read as raw text (not JSON-imported) so that a UTF-8
+// BOM — which the current mock file has — never breaks parsing.
 
-/**
- * PSI investigation dataset — representative ACME / fire‑safety studies
- * that map to the parametric envelope controlled by the Mission Simulator.
- */
-export const investigations = [
-  {
-    id: 'PSI-159',
-    title: 'Flame Spread over Thin PMMA in Microgravity',
-    rack: 'CIR-ACME',
-    pillars: ['Prevention'],
-    o2Range: [21, 40],
-    pressureRange: [10.2, 14.7],
-    gravityRange: [0, 0.01],
-    airflowRange: [0, 10],
-    doi: '10.1016/j.proci.2024.05.159',
-    finding: 'Concurrent airflow accelerates spread rate 3× above quiescent μg baseline.',
-  },
-  {
-    id: 'PSI-162',
-    title: 'Smoke Particle Size Distribution in Reduced Gravity',
-    rack: 'MSG-SDS',
-    pillars: ['Detection'],
-    o2Range: [21, 30],
-    pressureRange: [10.2, 14.7],
-    gravityRange: [0, 0.38],
-    airflowRange: [0, 15],
-    doi: '10.1016/j.combustflame.2024.162',
-    finding: 'μg smoke aerosol peaks at 1.2 µm — 40% larger than 1-g reference.',
-  },
-  {
-    id: 'PSI-175',
-    title: 'CO₂ Suppression Effectiveness in Low-Pressure O₂ Enriched Atm.',
-    rack: 'CIR-ACME',
-    pillars: ['Suppression'],
-    o2Range: [30, 85],
-    pressureRange: [4.3, 10.2],
-    airflowRange: [0, 20],
-    gravityRange: [0, 0.16],
-    doi: '10.1016/j.firesaf.2024.175',
-    finding: 'CO₂ extinguishment time doubles when O₂ exceeds 40% at 8.0 psi.',
-  },
-  {
-    id: 'PSI-180',
-    title: 'Wire Insulation Flammability Mapping for Habitat Wiring',
-    rack: 'CIR-ACME',
-    pillars: ['Prevention', 'Detection'],
-    o2Range: [21, 50],
-    pressureRange: [8.0, 14.7],
-    gravityRange: [0, 1],
-    airflowRange: [0, 12],
-    doi: '10.1016/j.proci.2025.01.180',
-    finding: 'Kapton insulation self-extinguishes below 24% O₂ at 10.2 psi in μg.',
-  },
-  {
-    id: 'PSI-184',
-    title: 'Droplet Combustion of Surrogate Fuels — Cool Flame Regime',
-    rack: 'CIR-FLEX',
-    pillars: ['Prevention'],
-    o2Range: [21, 40],
-    pressureRange: [14.7, 14.7],
-    gravityRange: [0, 0.01],
-    airflowRange: [0, 5],
-    doi: '10.1016/j.combustflame.2025.184',
-    finding: 'Cool-flame radiative fraction drops to 5%, complicating IR detection.',
-  },
-  {
-    id: 'PSI-191',
-    title: 'Aerosol Transport in Lunar-g Forced Ventilation',
-    rack: 'MSG-FLOW',
-    pillars: ['Detection'],
-    o2Range: [21, 40],
-    pressureRange: [8.0, 10.2],
-    gravityRange: [0.1, 0.2],
-    airflowRange: [5, 25],
-    doi: '10.1016/j.jaerosci.2025.191',
-    finding: 'Lunar-g buoyancy + ventilation creates bimodal smoke plume with 25 cm dead-zone.',
-  },
-  {
-    id: 'PSI-200',
-    title: 'Water-Mist Suppression Dynamics in Microgravity',
-    rack: 'CIR-ACME',
-    pillars: ['Suppression'],
-    o2Range: [21, 50],
-    pressureRange: [10.2, 14.7],
-    gravityRange: [0, 0.01],
-    airflowRange: [0, 10],
-    doi: '10.1016/j.proci.2025.06.200',
-    finding: 'Mist droplets stall near flame in μg; forced airflow essential for delivery.',
-  },
-  {
-    id: 'PSI-207',
-    title: 'Solid Surface Ignition Probability under EVA Atmosphere',
-    rack: 'CIR-ACME',
-    pillars: ['Prevention', 'Suppression'],
-    o2Range: [60, 85],
-    pressureRange: [4.3, 6.0],
-    gravityRange: [0, 0.38],
-    airflowRange: [0, 5],
-    doi: '10.1016/j.firesaf.2025.207',
-    finding: 'Ignition probability rises 6× at 85% O₂ / 4.3 psi vs. sea-level air.',
-  },
+// Vite resolves this at build time; files that do not exist yet are simply absent.
+const contractFiles = import.meta.glob('../../contracts/data/*.json', {
+  query: '?raw',
+  import: 'default',
+})
+
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+const API_PATHS = ['/investigations', '/api/investigations']
+const API_TIMEOUT_MS = 1500
+
+// ── Enums (mirror contracts/types.ts) ─────────────────────────────────────────
+export const PROJECT_TYPES = [
+  'Microgravity Investigation',
+  'Reduced Gravity Investigation',
+  'Ground Investigation',
 ]
+export const SAFETY_PILLARS = ['Prevention', 'Detection', 'Suppression']
+export const HARDWARE_RACKS = ['CIR-ACME', 'CIR-MDCA', 'MSG-SPICE', 'Saffire', 'Ground-CFD', 'Other']
+export const FUEL_PHASES = ['Solid', 'Liquid_Droplet', 'Gaseous', 'Multi-phase']
+export const GRAVITY_REGIMES = ['0g_microgravity', 'partial_g_proxy', '1g_ground_reference']
 
-/**
- * Compute a 0–100 match score between an investigation and the active
- * simulator parameters + safety-pillar filter.
- */
-export function computeMatchScore(inv, { o2, pressure, gravity, airflow, pillar }) {
-  // Pillar filter — hard gate
-  if (pillar && pillar !== 'All') {
-    const pillarRoot = pillar.split(' ')[0] // "Prevention (Materials)" → "Prevention"
-    if (!inv.pillars.includes(pillarRoot)) return 0
-  }
-
-  const inRange = (val, [lo, hi]) => {
-    if (val >= lo && val <= hi) return 1
-    const dist = val < lo ? lo - val : val - hi
-    const span = hi - lo || 1
-    return Math.max(0, 1 - dist / span)
-  }
-
-  const scores = [
-    inRange(o2, inv.o2Range),
-    inRange(pressure, inv.pressureRange),
-    inRange(gravity, inv.gravityRange),
-    inRange(airflow, inv.airflowRange),
-  ]
-
-  const avg = scores.reduce((a, b) => a + b, 0) / scores.length
-  return Math.round(avg * 100)
+export const FUEL_PHASE_LABELS = {
+  Solid: 'Solid',
+  Liquid_Droplet: 'Liquid droplet',
+  Gaseous: 'Gaseous',
+  'Multi-phase': 'Multi-phase',
+}
+export const GRAVITY_REGIME_LABELS = {
+  '0g_microgravity': '0g microgravity',
+  partial_g_proxy: 'Partial-g proxy',
+  '1g_ground_reference': '1g ground reference',
+}
+export const RACK_LABELS = {
+  'CIR-ACME': 'CIR · ACME (gaseous flames)',
+  'CIR-MDCA': 'CIR · MDCA (liquid droplets)',
+  'MSG-SPICE': 'MSG · SPICE (forced-flow duct)',
+  Saffire: 'Saffire (large-scale, Cygnus)',
+  'Ground-CFD': 'Ground / CFD reference',
+  Other: 'Other',
 }
 
-// ── IGNIS-SI  ·  Investigation helpers & mission presets ──────────────────────
+// ── Domain constants (CLAUDE.md §3) ───────────────────────────────────────────
+export const LUNAR_TARGET = { o2MinPct: 30, pressureMaxPsi: 10.2 }
+export const EARTH_ATM = { o2: 21, pressure: 14.7 }
+export const EVA_SUIT = { o2: 100, pressure: 4.3 }
+export const PSI_O2_TEST_LIMIT = 85
+
+export const SLIDER_LIMITS = {
+  o2: { min: 21, max: 85, step: 1 },
+  pressure: { min: 4.3, max: 14.7, step: 0.1 },
+  airflow: { min: 0, max: 30, step: 0.5 },
+}
+
+export const GRAVITY_LEVELS = [
+  { value: 0, short: '0g', name: 'Microgravity (orbit)' },
+  { value: 0.16, short: '0.16g', name: 'Moon (1/6g)' },
+  { value: 0.38, short: '0.38g', name: 'Mars (3/8g)' },
+  { value: 1, short: '1.0g', name: 'Earth' },
+]
+
+/** 3D viewport modes. */
+export const VIEW_MODES = {
+  cabin: { id: 'cabin', label: 'Spacecraft Cabin (0g)', short: 'Cabin' },
+  habitat: { id: 'habitat', label: 'Planetary Habitat (1/6g – 3/8g)', short: 'Habitat' },
+  chamber: { id: 'chamber', label: 'Combustion Chamber Flame (CIR/MSG)', short: 'Flame' },
+}
 
 /**
- * Mission presets used by the LeftPanel quick-select cards.
- * Each preset defines nominal environment parameters and metadata.
+ * Quick mission presets. Airflow values are simulator defaults chosen for the
+ * visualization (not PSI measurements) and are labelled as such in the UI.
  */
-export const missionPresets = [
+export const MISSION_PRESETS = [
   {
     id: 'iss',
-    name: 'ISS Microgravity (CIR)',
-    o2: 21,
-    pressure: 14.7,
-    gravity: 0.0,
-    airflow: 5,
-    badge: null,
+    name: 'ISS Cabin',
+    detail: '21% O₂ · 14.7 psi · 0g',
+    params: { o2: 21, pressure: 14.7, airflow: 8, gravity: 0 },
+    mode: 'cabin',
   },
   {
     id: 'lunar',
-    name: 'Lunar Habitat (Artemis)',
-    o2: 30,
-    pressure: 10.2,
-    gravity: 0.16,
-    airflow: 10,
-    badge: 'Elevated O₂',
+    name: 'Lunar Base / Rover',
+    detail: '32% O₂ · 8.2 psi · 1/6g',
+    params: { o2: 32, pressure: 8.2, airflow: 5, gravity: 0.16 },
+    mode: 'habitat',
   },
   {
     id: 'mars',
-    name: 'Mars Transit Vehicle',
-    o2: 26,
-    pressure: 10.2,
-    gravity: 0.0,
-    airflow: 8,
-    badge: null,
+    name: 'Mars Habitat',
+    detail: '34% O₂ · 8.0 psi · 3/8g',
+    params: { o2: 34, pressure: 8.0, airflow: 5, gravity: 0.38 },
+    mode: 'habitat',
   },
   {
     id: 'eva',
-    name: 'EVA Suit (xEMU)',
-    o2: 85,
-    pressure: 4.3,
-    gravity: 0.16,
-    airflow: 2,
-    badge: 'High O₂ ⚠',
+    name: 'Spacesuit Pre-Breathe',
+    detail: '100% O₂ capped at 85% (PSI limit) · 4.3 psi',
+    params: { o2: 85, pressure: 4.3, airflow: 2, gravity: 0 },
+    mode: 'cabin',
+  },
+  {
+    id: 'cfig',
+    name: 'Extreme CFI-G',
+    detail: '85% O₂ · inverted flame regime',
+    params: { o2: 85, pressure: 14.7, airflow: 0, gravity: 0 },
+    mode: 'chamber',
   },
 ]
 
-// ── Flame / combustion analysis helpers ──────────────────────────────────────
+export const DEFAULT_PARAMS = MISSION_PRESETS[0].params
 
-/**
- * Return a human-readable flame regime label for the given parameters.
- */
-export function getFlameRegime({ gravity, airflow, o2 }) {
-  if (gravity < 0.01 && airflow < 1) return 'Diffusion · Spherical'
-  if (gravity < 0.01 && airflow >= 1) return 'Forced-Flow · Elongated'
-  if (gravity >= 0.01 && gravity < 0.3) return 'Low-g Buoyant · Teardrop'
-  if (o2 > 50) return 'O₂-Enriched · Intense'
-  return 'Buoyant · Normal Gravity'
+// ── Normalization ─────────────────────────────────────────────────────────────
+function toNum(v) {
+  if (v === null || v === undefined || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+function toStrArray(v) {
+  if (Array.isArray(v)) return v.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.trim())
+  if (typeof v === 'string' && v.trim()) return [v.trim()]
+  return []
+}
+
+function pickEnum(value, allowed, fallback) {
+  return allowed.includes(value) ? value : fallback
+}
+
+function toStrOrNull(v) {
+  return typeof v === 'string' && v.trim() ? v.trim() : null
+}
+
+/** Coerce one raw record into the PSIInvestigation shape. Returns null if unusable. */
+export function normalizeInvestigation(raw) {
+  if (!raw || typeof raw !== 'object' || !raw.psi_id) return null
+  const env = raw.envelope || {}
+  return {
+    psi_id: String(raw.psi_id).trim(),
+    title: toStrOrNull(raw.title) || String(raw.psi_id),
+    psi_url: toStrOrNull(raw.psi_url),
+    doi_citation: toStrOrNull(raw.doi_citation),
+    objectives: toStrOrNull(raw.objectives),
+    approach: toStrOrNull(raw.approach),
+    project_type: pickEnum(raw.project_type, PROJECT_TYPES, 'Microgravity Investigation'),
+    safety_pillars: toStrArray(raw.safety_pillars).filter((p) => SAFETY_PILLARS.includes(p)),
+    hardware_rack: pickEnum(raw.hardware_rack, HARDWARE_RACKS, 'Other'),
+    fuel_phase: pickEnum(raw.fuel_phase, FUEL_PHASES, 'Multi-phase'),
+    fuels_tested: toStrArray(raw.fuels_tested),
+    envelope: {
+      o2_min_pct: toNum(env.o2_min_pct),
+      o2_max_pct: toNum(env.o2_max_pct),
+      pressure_min_psi: toNum(env.pressure_min_psi),
+      pressure_max_psi: toNum(env.pressure_max_psi),
+      airflow_min_cms: toNum(env.airflow_min_cms),
+      airflow_max_cms: toNum(env.airflow_max_cms),
+      gravity_regime: pickEnum(env.gravity_regime, GRAVITY_REGIMES, '0g_microgravity'),
+    },
+    lunar_habitat_relevant: Boolean(raw.lunar_habitat_relevant),
+    sensors_used: toStrArray(raw.sensors_used),
+    variables_compared: toStrOrNull(raw.variables_compared),
+    key_findings_summary: toStrOrNull(raw.key_findings_summary),
+    earth_spinoff_applications: toStrArray(raw.earth_spinoff_applications),
+    related_psi_ids: toStrArray(raw.related_psi_ids),
+    video_filename: toStrOrNull(raw.video_filename),
+  }
+}
+
+function parseJsonText(text) {
+  return JSON.parse(String(text).replace(/^﻿/, ''))
+}
+
+function extractList(payload) {
+  if (Array.isArray(payload)) return payload
+  if (payload && Array.isArray(payload.investigations)) return payload.investigations
+  if (payload && Array.isArray(payload.items)) return payload.items
+  return null
+}
+
+function normalizeList(payload) {
+  const list = extractList(payload)
+  if (!list) return []
+  const seen = new Set()
+  const out = []
+  for (const raw of list) {
+    const inv = normalizeInvestigation(raw)
+    if (inv && !seen.has(inv.psi_id)) {
+      seen.add(inv.psi_id)
+      out.push(inv)
+    }
+  }
+  return out
+}
+
+async function loadContractFile(name) {
+  const key = Object.keys(contractFiles).find((k) => k.endsWith(`/${name}`))
+  if (!key) return []
+  try {
+    return normalizeList(parseJsonText(await contractFiles[key]()))
+  } catch (err) {
+    console.warn(`[IGNIS-SI] Could not parse ${name}:`, err)
+    return []
+  }
+}
+
+async function loadFromBackend() {
+  for (const path of API_PATHS) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), API_TIMEOUT_MS)
+    try {
+      const res = await fetch(`${API_BASE}${path}`, { signal: ctrl.signal })
+      if (!res.ok) continue
+      const list = normalizeList(await res.json())
+      if (list.length) return list
+    } catch {
+      // Backend not running — silently fall through to the static contracts.
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+  return []
 }
 
 /**
- * Return the equivalent ISS rack for the current parameter set.
+ * Load the catalog. Resolves to `{ investigations, source }` where `source`
+ * is one of 'backend' | 'catalogo_limpio' | 'mock'.
  */
-export function getActiveRack({ gravity, airflow }) {
-  if (gravity < 0.01 && airflow < 3) return 'CIR (Combustion Integrated Rack)'
-  if (gravity < 0.01) return 'MSG (Microgravity Science Glovebox)'
-  return 'Ground Analog'
+export async function loadInvestigations() {
+  const backend = await loadFromBackend()
+  if (backend.length) return { investigations: backend, source: 'backend' }
+
+  const clean = await loadContractFile('catalogo_limpio.json')
+  if (clean.length) return { investigations: clean, source: 'catalogo_limpio' }
+
+  const mock = await loadContractFile('mock_catalogo.json')
+  return { investigations: mock, source: 'mock' }
+}
+
+export const SOURCE_LABELS = {
+  backend: { label: 'Live API', detail: `FastAPI backend · ${API_BASE}`, tone: 'emerald' },
+  catalogo_limpio: { label: 'Clean catalog', detail: 'contracts/data/catalogo_limpio.json', tone: 'cyan' },
+  mock: { label: 'Mock catalog', detail: 'contracts/data/mock_catalogo.json (fallback)', tone: 'amber' },
+}
+
+// ── CV telemetry (Person 3) — optional ───────────────────────────────────────
+const telemetryFiles = import.meta.glob('../../contracts/data/cv_telemetry/*.json', {
+  query: '?raw',
+  import: 'default',
+})
+
+/** Find and parse a CV telemetry curve for an investigation, or null. */
+export async function loadTelemetry(inv) {
+  const keys = Object.keys(telemetryFiles)
+  if (!keys.length) return null
+  const id = inv.psi_id.toLowerCase().replace(/[^a-z0-9]/g, '')
+  const stem = inv.video_filename ? inv.video_filename.replace(/\.[^.]+$/, '').toLowerCase() : null
+  const key = keys.find((k) => {
+    const file = k.split('/').pop().toLowerCase()
+    return (stem && file.startsWith(stem)) || file.replace(/[^a-z0-9]/g, '').includes(id)
+  })
+  if (!key) return null
+  try {
+    const payload = parseJsonText(await telemetryFiles[key]())
+    const points = Array.isArray(payload) ? payload : payload.points || payload.telemetry
+    return Array.isArray(points) && points.length ? { file: key.split('/').pop(), points } : null
+  } catch {
+    return null
+  }
+}
+
+// ── Formatting helpers ────────────────────────────────────────────────────────
+export function formatRange(min, max, unit) {
+  if (min == null && max == null) return 'n/a'
+  if (min == null || max == null || min === max) return `${min ?? max} ${unit}`
+  return `${min}–${max} ${unit}`
+}
+
+export function envelopeSummary(env) {
+  return {
+    o2: formatRange(env.o2_min_pct, env.o2_max_pct, '% O₂'),
+    pressure: formatRange(env.pressure_min_psi, env.pressure_max_psi, 'psi'),
+    airflow: formatRange(env.airflow_min_cms, env.airflow_max_cms, 'cm/s'),
+    gravity: GRAVITY_REGIME_LABELS[env.gravity_regime],
+  }
+}
+
+export function citationFor(inv) {
+  return inv.doi_citation || `${inv.psi_id}: ${inv.title}. NASA Physical Sciences Informatics (PSI).${inv.psi_url ? ` ${inv.psi_url}` : ''}`
+}
+
+export function isLunarZone({ o2, pressure }) {
+  return o2 >= LUNAR_TARGET.o2MinPct || pressure <= LUNAR_TARGET.pressureMaxPsi
+}
+
+export function gravityRegimeFor(g) {
+  if (g <= 0.001) return '0g_microgravity'
+  if (g >= 0.999) return '1g_ground_reference'
+  return 'partial_g_proxy'
+}
+
+// ── Explainable match score ──────────────────────────────────────────────────
+/** Visible, deterministic weights (sum = 1). */
+export const SCORE_WEIGHTS = { o2: 0.35, pressure: 0.25, gravity: 0.25, airflow: 0.15 }
+
+/**
+ * How well each gravity regime informs each target gravity level.
+ * 0g and 1g data *bound* partial gravity; E-FIELD proxies approximate it.
+ */
+export const GRAVITY_FIT = {
+  '0g_microgravity': { 0: 1, 0.16: 0.6, 0.38: 0.5, 1: 0.15 },
+  partial_g_proxy: { 0: 0.6, 0.16: 1, 0.38: 1, 1: 0.6 },
+  '1g_ground_reference': { 0: 0.15, 0.16: 0.5, 0.38: 0.6, 1: 1 },
+}
+
+function axisFit(value, min, max, span) {
+  if (min == null && max == null) return { score: 0.5, inside: false, unknown: true, dist: null }
+  const lo = min ?? max
+  const hi = max ?? min
+  if (value >= lo - 1e-9 && value <= hi + 1e-9) return { score: 1, inside: true, unknown: false, dist: 0 }
+  const dist = value < lo ? lo - value : value - hi
+  return { score: Math.max(0, 1 - dist / (span * 0.5)), inside: false, unknown: false, dist }
 }
 
 /**
- * Estimate a soot index (0 – 10) based on oxygen and airflow.
- * Higher O₂ or lower airflow → more soot.
+ * Score one investigation against the simulator parameters.
+ * Returns { score (0-100), status, axes, reasons } — every number is traceable.
  */
-export function getSootIndex({ o2, airflow }) {
-  const base = Math.min(10, Math.max(0, (o2 - 21) / 6.4))
-  const flowFactor = Math.max(0, 1 - airflow / 30)
-  return Math.round((base * 0.6 + flowFactor * 4) * 10) / 10
+export function scoreInvestigation(inv, { o2, pressure, airflow, gravity }) {
+  const e = inv.envelope
+  const axes = {
+    o2: axisFit(o2, e.o2_min_pct, e.o2_max_pct, SLIDER_LIMITS.o2.max - SLIDER_LIMITS.o2.min),
+    pressure: axisFit(pressure, e.pressure_min_psi, e.pressure_max_psi, SLIDER_LIMITS.pressure.max - SLIDER_LIMITS.pressure.min),
+    airflow: axisFit(airflow, e.airflow_min_cms, e.airflow_max_cms, SLIDER_LIMITS.airflow.max - SLIDER_LIMITS.airflow.min),
+  }
+  const gFit = GRAVITY_FIT[e.gravity_regime]?.[gravity] ?? 0.5
+  axes.gravity = { score: gFit, inside: gFit === 1, unknown: false, dist: null }
+
+  const raw = Object.entries(SCORE_WEIGHTS).reduce((sum, [k, w]) => sum + w * axes[k].score, 0)
+  const score = Math.round(raw * 100)
+
+  const envInside = axes.o2.inside && axes.pressure.inside && axes.airflow.inside
+  const partialTarget = gravity > 0 && gravity < 1
+  let status
+  if (envInside && axes.gravity.inside) status = 'covers'
+  else if (envInside && partialTarget && e.gravity_regime !== 'partial_g_proxy') status = 'bounds'
+  else if (score >= 50) status = 'partial'
+  else status = 'outside'
+
+  const reasons = []
+  const label = { o2: 'O₂', pressure: 'Pressure', airflow: 'Airflow' }
+  for (const k of ['o2', 'pressure', 'airflow']) {
+    const a = axes[k]
+    if (a.unknown) reasons.push(`${label[k]}: not reported (scored 50%)`)
+    else if (a.inside) reasons.push(`${label[k]}: inside tested range`)
+    else reasons.push(`${label[k]}: ${+a.dist.toFixed(1)} outside tested range`)
+  }
+  reasons.push(
+    `Gravity: ${GRAVITY_REGIME_LABELS[e.gravity_regime]} → ${Math.round(gFit * 100)}% fit for ${gravity}g`,
+  )
+  return { score, status, axes, reasons }
 }
 
-/**
- * Convection / diffusion ratio.  Pure diffusion → 0, pure convection → ∞.
- */
-export function getConvDiffRatio({ gravity, airflow }) {
-  const buoyancy = gravity * 9.81
-  const forced = airflow / 100 // m/s
-  const ratio = (buoyancy + forced * 10) / (0.2 + 0.001) // normalised
-  return Math.round(ratio * 100) / 100
+export const STATUS_META = {
+  covers: { label: 'Covers', tone: 'emerald', hint: 'Envelope contains all selected conditions.' },
+  bounds: { label: 'Bounds', tone: 'cyan', hint: 'Envelope matches; result bounds the partial-g target from 0g or 1g.' },
+  partial: { label: 'Partial', tone: 'amber', hint: 'Some conditions fall outside the tested envelope.' },
+  outside: { label: 'Outside', tone: 'slate', hint: 'Mostly outside the tested envelope.' },
 }
 
-// ── Flammability risk & advisory (used by RightPanel) ────────────────────────
-
-/**
- * Compute a composite Flammability Risk Index (0 – 100) from the four
- * environmental parameters.  The model is a weighted heuristic inspired by
- * NASA-STD-6001B concepts:
- *   • O₂ concentration is the dominant driver (40 %)
- *   • Cabin pressure amplifies combustion (20 %)
- *   • Gravity reduction raises risk (25 %) — lower buoyancy means less
- *     natural convective quenching
- *   • Airflow can help or hurt (15 %) — moderate flow aids detection,
- *     high flow fans flames
- */
-export function computeFlammabilityRisk(o2, pressure, gravity, airflow) {
-  // Normalise each axis to 0-1
-  const o2Norm = Math.min(1, Math.max(0, (o2 - 21) / (85 - 21)))
-  const presNorm = Math.min(1, Math.max(0, (pressure - 4.3) / (14.7 - 4.3)))
-  // Lower gravity → higher risk
-  const gravNorm = 1 - Math.min(1, Math.max(0, gravity))
-  // Airflow: risk peaks at high airflow, but zero airflow in 0g is also bad
-  const flowNorm = Math.min(1, Math.max(0, airflow / 30))
-  const flowRisk = gravity < 0.05
-    ? 0.5 + 0.5 * (1 - flowNorm) // 0g: stagnant = worst
-    : 0.3 + 0.7 * flowNorm       // 1g: more flow = more risk
-
-  const raw =
-    o2Norm   * 40 +
-    presNorm * 20 +
-    gravNorm * 25 +
-    flowRisk * 15
-
-  return Math.round(Math.min(100, Math.max(0, raw)) * 10) / 10
+export function rankInvestigations(list, params) {
+  return list
+    .map((inv) => ({ inv, ...scoreInvestigation(inv, params) }))
+    .sort((a, b) => b.score - a.score || Number(b.inv.lunar_habitat_relevant) - Number(a.inv.lunar_habitat_relevant))
 }
 
-/**
- * Map a numeric risk score to a { label, color } pair.
- */
-export function getRiskLevel(score) {
-  if (score >= 65)
-    return { label: 'Critical Lunar Regime', color: '#EF4444' }
-  if (score >= 40)
-    return { label: 'Elevated',              color: '#F59E0B' }
-  return   { label: 'Nominal',               color: '#10B981' }
+// ── Heuristic hazard index (illustrative, deterministic) ─────────────────────
+export function hazardLevel({ o2, pressure }) {
+  if (o2 >= 40) return { level: 'critical', label: 'Critical', color: '#EF4444' }
+  if (o2 >= LUNAR_TARGET.o2MinPct || (o2 > 21 && pressure <= LUNAR_TARGET.pressureMaxPsi))
+    return { level: 'elevated', label: 'Elevated', color: '#F59E0B' }
+  if (pressure <= LUNAR_TARGET.pressureMaxPsi) return { level: 'watch', label: 'Watch', color: '#38BDF8' }
+  return { level: 'nominal', label: 'Nominal', color: '#10B981' }
 }
 
-/**
- * Return an array of actionable advisory strings based on the current
- * parameter combination and risk score.
- */
-export function generateAdvisory(o2, pressure, gravity, airflow, riskScore) {
-  const items = []
+/** Deterministic rule-based advisory strings for the current conditions. */
+export function advisory({ o2, pressure, airflow, gravity }) {
+  const out = []
+  if (o2 >= LUNAR_TARGET.o2MinPct)
+    out.push(`O₂ ≥ ${LUNAR_TARGET.o2MinPct}%: exploration-atmosphere regime — material flammability screening must be performed at this O₂ level, not at 21%.`)
+  if (o2 >= 70)
+    out.push('Near the PSI 85% O₂ test limit: inverse (inside-out) and cool-flame regimes observed in ACME CFI-G become relevant.')
+  if (pressure <= LUNAR_TARGET.pressureMaxPsi)
+    out.push(`Pressure ≤ ${LUNAR_TARGET.pressureMaxPsi} psi: reduced-pressure / elevated-O₂ cabin as targeted for lunar bases and pressurized rovers.`)
+  if (gravity === 0 && airflow < 1)
+    out.push('Quiescent 0g: no buoyant plume — smoke does not rise to ceiling detectors; detection relies on ventilation transport.')
+  if (gravity === 0 && airflow >= 5)
+    out.push('Forced ventilation in 0g sustains flames that would self-extinguish in still air — consider fan shutdown in fire response.')
+  if (gravity > 0 && gravity < 1)
+    out.push('Partial gravity: no direct flight data yet — results are bounded between 0g ISS data, 1g ground references and ACME E-FIELD proxies (PSI-22). LUCI and FM2 lunar data pending.')
+  if (!out.length) out.push('Conditions resemble standard ISS cabin air; existing 0g fire-safety data apply directly.')
+  return out
+}
 
-  if (o2 > 30)
-    items.push('⚠️ O₂ exceeds 30 % — enforce NASA-STD-6001B material screening for all cabin contents.')
-  if (o2 > 60)
-    items.push('🔴 Extreme O₂ enrichment — restrict ignition sources, mandate Class-A materials only.')
-  if (gravity < 0.05 && airflow < 3)
-    items.push('🔵 Near-zero-g stagnant flow — flame detection via ionisation sensors recommended; smoke detectors may lag.')
-  if (gravity >= 0.05 && gravity < 0.2)
-    items.push('🟡 Partial-gravity regime — flame spread models un-validated; apply 0g upper-bound safety margins.')
-  if (pressure < 8)
-    items.push('ℹ️ Low cabin pressure — reduced convective cooling; monitor surface temperatures on electronics.')
-  if (airflow > 20)
-    items.push('⚠️ High ventilation rate — consider baffles to prevent flame-spread acceleration in corridors.')
-  if (riskScore >= 65)
-    items.push('🔴 Risk index critical — recommend immediate suppression system readiness check and crew drill.')
-  if (riskScore < 40)
-    items.push('✅ Parameters within nominal envelope — standard monitoring protocols sufficient.')
-  if (items.length === 0)
-    items.push('✅ All parameters within expected operational bounds.')
-
-  return items
+/** Flame regime label + supporting evidence for the procedural flame view. */
+export function flameRegime({ o2, airflow, gravity }) {
+  if (o2 >= 75) return { name: 'Inverse (inside-out) flame', ref: 'ACME CFI-G · PSI-159' }
+  if (gravity === 0 && airflow < 1) return { name: 'Spherical diffusion flame (0g)', ref: 'ACME Flame Design · PSI-10' }
+  if (gravity === 0) return { name: 'Forced-flow flame, tilted downstream', ref: 'SPICE / BASS-II · PSI-107, PSI-26' }
+  if (gravity < 1) return { name: 'Partial-g buoyant flame (bounded)', ref: '0g ↔ 1g, E-FIELD proxy · PSI-22' }
+  return { name: 'Buoyant teardrop flame (1g reference)', ref: 'Ground reference' }
 }

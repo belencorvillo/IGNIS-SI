@@ -1,137 +1,130 @@
-import { useState, useCallback } from 'react'
-import TopNav from './components/TopNav'
-import LeftPanel from './components/LeftPanel'
-import Viewport3D from './components/Viewport3D'
-import RightPanel from './components/RightPanel'
-import BottomInvestigations from './components/BottomInvestigations'
-import DOIModal from './components/DOIModal'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { BookMarked, Database, Flame, Globe2, Loader2, Telescope, Orbit } from 'lucide-react'
+import MissionSimulator from './components/MissionSimulator'
+import Explorer from './components/Explorer'
+import Spinoffs from './components/Spinoffs'
+import CompareModal from './components/CompareModal'
+import CiteModal from './components/CiteModal'
+import InvestigationDetail from './components/InvestigationDetail'
+import { Badge, ScopeNote } from './components/ui'
+import { DEFAULT_PARAMS, SOURCE_LABELS, loadInvestigations } from './data/investigations'
 
-const defaultParams = {
-  o2: 21,
-  pressure: 14.7,
-  gravity: 0.0,
-  airflow: 5,
-}
-
-function PlaceholderTab({ title, description, icon }) {
-  return (
-    <div className="flex-1 flex items-center justify-center p-8 grid-bg min-h-[calc(100vh-120px)]">
-      <div className="glass-panel glow-cyan p-12 max-w-lg text-center fade-in">
-        <div className="text-6xl mb-6">{icon}</div>
-        <h2 className="heading-font text-2xl font-bold text-white mb-3">{title}</h2>
-        <p className="text-slate-400 mb-6">{description}</p>
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-cyan-500/30 text-cyan-400 text-sm">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          Coming in Phase 2
-        </div>
-      </div>
-    </div>
-  )
-}
+const TABS = [
+  { id: 'simulator', label: 'Mission Simulator', Icon: Orbit },
+  { id: 'explorer', label: 'SI Explorer', Icon: Telescope },
+  { id: 'spinoffs', label: 'Earth Fire Safety Spin-offs', Icon: Globe2 },
+]
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState(0)
-  const [params, setParams] = useState(defaultParams)
-  const [activePreset, setActivePreset] = useState('iss')
-  const [activePillar, setActivePillar] = useState('All')
-  const [viewMode, setViewMode] = useState('chamber')
-  const [doiOpen, setDoiOpen] = useState(false)
+  const [tab, setTab] = useState('simulator')
+  const [data, setData] = useState({ investigations: [], source: null, loading: true, error: null })
+  const [params, setParams] = useState(DEFAULT_PARAMS)
+  const [mode, setMode] = useState('cabin')
+  const [detail, setDetail] = useState(null)
+  const [compareIds, setCompareIds] = useState(null)
+  const [citeOpen, setCiteOpen] = useState(false)
 
-  const handleSetParams = useCallback((newParams) => {
-    setParams(newParams)
+  useEffect(() => {
+    let alive = true
+    loadInvestigations()
+      .then((r) => alive && setData({ ...r, loading: false, error: null }))
+      .catch((error) => alive && setData({ investigations: [], source: null, loading: false, error }))
+    return () => {
+      alive = false
+    }
   }, [])
 
+  const { investigations, source } = data
+  const compareItems = useMemo(
+    () => (compareIds ? compareIds.map((id) => investigations.find((i) => i.psi_id === id)).filter(Boolean) : []),
+    [compareIds, investigations],
+  )
+  const closeDetail = useCallback(() => setDetail(null), [])
+  const src = SOURCE_LABELS[source]
+
   return (
-    <div className="min-h-screen bg-[#050811] grid-bg flex flex-col">
-      {/* Top Navigation */}
-      <TopNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenDOI={() => setDoiOpen(true)}
-      />
-
-      {/* Main Content Area */}
-      <main className="flex-1 pt-[68px]">
-        {activeTab === 0 && (
-          <div className="fade-in">
-            {/* 3-Column Bento Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_360px] xl:grid-cols-[340px_1fr_380px] gap-3 p-3 min-h-[calc(100vh-280px)]">
-              {/* Left Panel: Mission Controls */}
-              <div className="glass-panel overflow-hidden flex flex-col max-h-[calc(100vh-180px)]">
-                <LeftPanel
-                  params={params}
-                  setParams={handleSetParams}
-                  activePreset={activePreset}
-                  setActivePreset={setActivePreset}
-                  activePillar={activePillar}
-                  setActivePillar={setActivePillar}
-                />
-              </div>
-
-              {/* Center Panel: 3D Viewport */}
-              <div className="glass-panel overflow-hidden flex flex-col min-h-[500px]">
-                <Viewport3D
-                  params={params}
-                  viewMode={viewMode}
-                  setViewMode={setViewMode}
-                />
-              </div>
-
-              {/* Right Panel: Risk & Advisor */}
-              <div className="glass-panel overflow-hidden flex flex-col max-h-[calc(100vh-180px)]">
-                <RightPanel params={params} />
-              </div>
-            </div>
-
-            {/* Bottom: Ranked Investigations */}
-            <div className="px-3 pb-3">
-              <div className="glass-panel p-4">
-                <BottomInvestigations
-                  params={params}
-                  activePillar={activePillar}
-                />
-              </div>
+    <div className="grid-bg flex min-h-screen flex-col bg-[#050811]">
+      <header className="sticky top-0 z-30 border-b border-cyan-500/15 bg-[#050811]/90 backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="rounded-lg bg-gradient-to-br from-orange-500 to-cyan-500 p-1.5">
+              <Flame size={18} className="text-white" />
+            </span>
+            <div>
+              <div className="heading-font text-base font-bold tracking-wide text-white">IGNIS-SI</div>
+              <div className="text-[10px] text-slate-400">Flame in Freefall · SI-powered fire safety insights from microgravity combustion</div>
             </div>
           </div>
-        )}
+          <div className="flex flex-wrap items-center gap-2">
+            {src && (
+              <Badge tone={src.tone} title={src.detail}>
+                <Database size={11} /> {src.label}
+              </Badge>
+            )}
+            <button
+              onClick={() => setCiteOpen(true)}
+              disabled={!investigations.length}
+              className="flex items-center gap-1.5 rounded-lg border border-cyan-400/40 px-3 py-1.5 text-xs font-medium text-cyan-300 hover:bg-cyan-400/10 disabled:opacity-50"
+            >
+              <BookMarked size={14} /> Cite Active Datasets (DOIs)
+            </button>
+          </div>
+        </div>
+        <nav className="flex gap-1 overflow-x-auto px-4" aria-label="Main views">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`nav-tab flex items-center gap-1.5 whitespace-nowrap px-3 py-2 text-sm ${tab === t.id ? 'active' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+              <t.Icon size={15} /> {t.label}
+            </button>
+          ))}
+        </nav>
+      </header>
 
-        {activeTab === 1 && (
-          <PlaceholderTab
-            title="Multimodal PSI Gallery"
-            description="Browse high-resolution imagery, video sequences, and radiometric data from ISS combustion experiments. Filter by flame type, fuel, and hardware rack."
-            icon="🖼️"
-          />
+      <main className="flex-1">
+        {data.loading && (
+          <div className="flex items-center justify-center gap-2 p-16 text-sm text-slate-400">
+            <Loader2 size={16} className="animate-spin" /> Loading PSI catalog…
+          </div>
         )}
-        {activeTab === 2 && (
-          <PlaceholderTab
-            title="Visual Flame Autopsy"
-            description="AI-powered visual analysis pipeline for flame structure decomposition, soot distribution mapping, and extinction event classification from PSI imagery."
-            icon="🔬"
-          />
+        {!data.loading && !investigations.length && (
+          <div className="glass-panel m-4 p-8 text-center text-sm text-amber-300">
+            No investigations could be loaded from the backend, catalogo_limpio.json or mock_catalogo.json.
+          </div>
         )}
-        {activeTab === 3 && (
-          <PlaceholderTab
-            title="Earth Spinoffs"
-            description="Explore how microgravity combustion research translates to terrestrial fire safety innovations: improved smoke detectors, clean combustion engines, and advanced fire suppression systems."
-            icon="🌍"
-          />
+        {!data.loading && investigations.length > 0 && (
+          <>
+            {tab === 'simulator' && (
+              <MissionSimulator
+                investigations={investigations}
+                params={params}
+                setParams={setParams}
+                mode={mode}
+                setMode={setMode}
+                onOpenDetail={setDetail}
+              />
+            )}
+            {tab === 'explorer' && <Explorer investigations={investigations} onOpenDetail={setDetail} onCompare={setCompareIds} />}
+            {tab === 'spinoffs' && <Spinoffs investigations={investigations} onOpenDetail={setDetail} />}
+          </>
         )}
       </main>
 
-      {/* Scope Note Footer */}
-      <footer className="border-t border-cyan-500/10 bg-[#050811]/90 backdrop-blur-sm px-4 py-2">
-        <p className="text-center text-xs text-slate-500 mono">
-          Scope Note: Rocket propulsion and propellants are excluded, as high flow velocities render combustion effectively gravity-independent.
+      <footer className="border-t border-cyan-500/10 bg-[#050811]/90 px-4 py-3">
+        <ScopeNote className="mx-auto max-w-5xl text-center" />
+        <p className="mx-auto mt-1 max-w-5xl text-center text-[10px] text-slate-500">
+          Data: NASA Physical Sciences Informatics (PSI). Each investigation shows its PSI ID and citation. Content marked “SI-Assisted Analysis”
+          was produced with Space Intelligence assistance. NASA Space Apps Challenge 2026 project — not an official NASA product.
         </p>
       </footer>
 
-      {/* DOI Modal */}
-      <DOIModal
-        isOpen={doiOpen}
-        onClose={() => setDoiOpen(false)}
-        params={params}
-        activePillar={activePillar}
-      />
+      {detail && (
+        <InvestigationDetail inv={detail} catalog={investigations} onClose={closeDetail} onOpen={setDetail} />
+      )}
+      <CompareModal open={compareItems.length >= 2} onClose={() => setCompareIds(null)} items={compareItems} />
+      <CiteModal open={citeOpen} onClose={() => setCiteOpen(false)} investigations={investigations} source={source} />
     </div>
   )
 }
