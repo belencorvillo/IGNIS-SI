@@ -4,7 +4,7 @@
 - **Person 1 (Data Extraction):** Only touch `data-pipeline/` and output raw files locally.
 - **Person 2 (SI Search, Classification & API):** Owns `backend/` and generates `contracts/data/catalogo_limpio.json`.
 - **Person 3 (Computer Vision):** Only touch `cv-engine/` and output lightweight JSON curves into `contracts/data/cv_telemetry/`.
-- **Person 4 (Frontend & 3D Digital Twin):** Only touch `frontend/`.
+- **Person 4 (Frontend & 3D Digital Twin):** Only touch `src/`, `public/`, `index.html`, and root config files.
 - NEVER modify `contracts/schema.py` or `contracts/types.ts` without notifying the whole team first.
 
 ## 2. NASA Space Apps Mandatory Compliance
