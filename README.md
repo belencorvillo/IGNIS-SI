@@ -1,25 +1,106 @@
-# 🔥 IGNIS-SI: Microgravity Combustion Explorer
+<a id="readme-top"></a>
 
-[![Python](https://img.shields.io/badge/Python-3.10.19-FFD43B)](https://www.python.org/downloads/)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/Frontend-React%2019%20%2B%20Vite-646CFF)](https://vitejs.dev/)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688)](https://fastapi.tiangolo.com/)
-[![Ollama](https://img.shields.io/badge/LLM-Ollama%20(local)-000000)](https://ollama.com/)
-[![YOLO](https://img.shields.io/badge/Vision-YOLO%20(Ultralytics)-00FFFF)](https://docs.ultralytics.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<div align="center">
 
-**IGNIS-SI** is a web application built for the **NASA Space Apps Challenge**. It turns NASA's **Physical Sciences Informatics (PSI)** microgravity combustion experiments into something a mission planner can explore in minutes instead of weeks.
+<img src="docs/assets/logo.svg" alt="IGNIS-SI logo" width="160">
 
-PSI data is hard to find, hard to compare and hard to interpret. IGNIS-SI addresses this with three connected tools:
+# IGNIS-SI
 
-1. **Interactive, animated simulator.** Change experiment variables (gravity level, atmosphere, oxygen concentration, pressure, among others) and see how flame behavior changes across environments.
-2. **Plain-language search.** A locally run LLM (via **Ollama**) over a structured **SQLite** database of PSI investigations understands a question such as *"how does low oxygen affect flame spread?"* and returns the most relevant experiments.
-3. **Research tab.** Links current microgravity combustion studies to future research on next-generation fire-safety controls and equipment for cabins and bases on the lunar and Martian surfaces. On Earth, possible applications are included to support fire-safety decisions.
+**Explore NASA's microgravity combustion experiments in minutes, not weeks.**
+
+<br>
+
+[![React](https://img.shields.io/badge/React-19-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Three.js](https://img.shields.io/badge/Three.js-000000?style=flat-square&logo=threedotjs&logoColor=white)](https://threejs.org/)
+[![Python](https://img.shields.io/badge/Python-3.10.19-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Ollama](https://img.shields.io/badge/Ollama-qwen2.5-000000?style=flat-square&logo=ollama&logoColor=white)](https://ollama.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![YOLO](https://img.shields.io/badge/YOLO-Ultralytics-00FFFF?style=flat-square&logo=yolo&logoColor=black)](https://docs.ultralytics.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+
+<br>
+
+[About](#about) ·
+[Summary](#project-summary) ·
+[Demo](#demo) ·
+[Features](#main-features) ·
+[Structure](#repository-structure) ·
+[Architecture](#architecture) ·
+[Installation](#installation) ·
+[Running](#running-the-system) ·
+[YOLO](#training-the-yolo-model) ·
+[Compliance](#nasa-space-apps-compliance) ·
+[Authors](#authors) ·
+[License](#license)
+
+</div>
+
+---
+
+## About
+
+**IGNIS-SI** was developed for the **NASA Space Apps Challenge**. NASA's **Physical Sciences Informatics (PSI)** database holds the results of many combustion experiments run in microgravity, but this knowledge is spread across hundreds of records and raw data files. For a mission planner designing the fire safety of a spacecraft cabin or a lunar base, finding the right experiment, comparing it with others and understanding what it implies can take weeks.
+
+IGNIS-SI brings that knowledge together in one place, so the evidence behind fire-safety decisions for future exploration can be found, compared and understood quickly, with the citation of every investigation always at hand.
+
+## Project Summary
+
+IGNIS-SI is a web application that turns NASA's PSI microgravity combustion experiments into something a mission planner can explore in minutes instead of weeks. Since the data is hard to find, hard to compare and hard to interpret, IGNIS-SI offers three connected tools.
+
+### 1. Interactive, animated simulator
+
+Users change experiment variables (gravity level, atmosphere, oxygen concentration or pressure, among others) and see how flame behavior changes across environments.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/simulator-1.jpeg" alt="Simulator: 3D flame and controls"></td>
+    <td width="50%"><img src="docs/screenshots/simulator-2.jpeg" alt="Simulator: experiment ranking and partial-gravity chart"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>3D flame and environment controls</sub></td>
+    <td align="center"><sub>Matching experiments and partial-gravity chart</sub></td>
+  </tr>
+</table>
+
+### 2. Plain-language search
+
+A locally run LLM with **Ollama**, working over a structured **SQLite** database of PSI investigations, understands a question such as *"how does low oxygen affect flame spread?"* and returns the most relevant experiments.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/library-1.jpeg" alt="Library: search and filters"></td>
+    <td width="50%"><img src="docs/screenshots/library-2.jpeg" alt="Library: investigation comparison"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Natural-language search and filters</sub></td>
+    <td align="center"><sub>Investigation details and comparison</sub></td>
+  </tr>
+</table>
+
+### 3. Research tab
+
+Links current microgravity combustion studies to future research on next-generation fire-safety controls and equipment for cabins and bases on the lunar and Martian surfaces. Furthermore, on Earth, possible applications are included to support fire-safety decisions.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/applications-1.jpeg" alt="Applications: space habitats"></td>
+    <td width="50%"><img src="docs/screenshots/applications-2.jpeg" alt="Applications: fire safety on Earth"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Fire safety for lunar and Martian bases</sub></td>
+    <td align="center"><sub>Applications on Earth</sub></td>
+  </tr>
+</table>
+
+<p align="right"><a href="#readme-top">⬆ Back to top</a></p>
 
 ## Demo
 
-<!-- Replace with your video / screenshot:
-[![Watch the demo](docs/img/demo.png)](https://youtu.be/XXXXXXXXXXX)
+<!-- Replace with your video:
+[![Watch the demo](docs/screenshots/demo-thumbnail.png)](https://youtu.be/XXXXXXXXXXX)
 > Click the image to open the demo.
 -->
 
@@ -30,7 +111,7 @@ A demo video will be linked here.
 - **Animated 3D flame simulator** (React Three Fiber) with presets, a match score against real PSI experiments, hazard and advisory rules, and a partial-gravity chart.
 - **Natural-language search** powered by a local LLM (`qwen2.5` through Ollama), with a closed tag taxonomy (PSI IDs, gravity regime, atmosphere, fuel phase, hardware rack, sensors, flame phenomena) and hybrid ranking over a SQLite index.
 - **Investigation library** with filters, local search with domain synonyms, side-by-side comparison ("what changed / what stayed the same") and a 3D knowledge graph.
-- **Applications tab** covering next-generation fire-safety equipment for lunar/Martian habitats and fire-safety decisions on Earth, with 3D objects and documented NASA sources.
+- **Applications tab** covering next-generation fire-safety equipment for lunar and Martian habitats and fire-safety decisions on Earth, with 3D objects and documented NASA sources.
 - **Get data** page to filter the catalog and download **CSV / JSON** for your own models.
 - **Computer-vision annotation pipeline** (YOLO) to automatically annotate combustion videos for the database: raw fuel, flame, burning fuel and fuel residue.
 - **Data attribution built in:** every PSI investigation shows its `psi_id` and an official DOI citation ("Cite this Investigation").
@@ -43,6 +124,9 @@ IGNIS-SI/
 ├── package.json / vite.config.js / index.html
 ├── requirements.txt
 ├── CLAUDE.md                 # Team workflow and Space Apps compliance rules
+├── docs/
+│   ├── assets/               # Logo, architecture diagram, icons
+│   └── screenshots/          # Screenshots used in this README
 ├── backend/
 │   ├── api.py                # FastAPI server (GET /buscar?q=...)
 │   ├── motor_psi_ollama.py   # PSI indexing, LLM tagging and hybrid search (SQLite + Ollama)
@@ -76,53 +160,28 @@ IGNIS-SI/
 └── inspo/                    # Design inspiration and references
 ```
 
-## System Overview
+## Architecture
 
-```text
-        ┌──────────────────────────────────────┐
-        │  Frontend (React + Vite + Three.js)  │
-        │  Simulator · Library · Applications  │
-        │  Get data · Cite data · About us     │
-        └──────────┬───────────────────┬───────┘
-                   │ REST (FastAPI)    │ fallback
-                   ▼                   ▼
-        ┌────────────────────┐  ┌─────────────────────────┐
-        │  backend/api.py    │  │ contracts/data/*.json   │
-        │  /buscar?q=...     │  │ (clean catalog / mock)  │
-        └─────────┬──────────┘  └─────────────────────────┘
-                  ▼
-        ┌────────────────────┐        ┌──────────────────────────┐
-        │ motor_psi_ollama   │───────▶│ SQLite index             │
-        │ Ollama (qwen2.5)   │        │ (psi_index.db)           │
-        └────────────────────┘        └──────────────────────────┘
+<p align="center">
+  <img src="docs/assets/architecture.svg" alt="IGNIS-SI system architecture: React frontend, FastAPI + Ollama service, SQLite index and offline YOLO pipeline" width="100%">
+</p>
 
-        ┌────────────────────────────────────────────┐
-        │ entrenamiento_yolo (offline)               │
-        │ frames → LabelMe → dataset → train → video │
-        └────────────────────────────────────────────┘
-```
+**How the pieces talk to each other**
 
-## Components
+- **Frontend → data.** The catalog loader (`src/shared/catalog.js`) asks the FastAPI backend first (`VITE_API_URL`, default `http://localhost:8000`). If it is not reachable, it falls back to `contracts/data/catalogo_limpio.json` and finally to `mock_catalogo.json`, so the app keeps working without the backend.
+- **Search.** The Library sends the user's question to `GET /buscar?q=...`. `api.py` forwards it to `motor_psi_ollama.py`, which combines the local LLM (Ollama) with a hybrid query over the SQLite index and returns the most relevant files and experiments.
+- **Indexing.** NASA PSI data (`datos_raw/` and `catalogo_limpio.json`) is classified with the LLM using a closed tag taxonomy and stored in `psi_index.db`.
+- **Computer vision.** The `entrenamiento_yolo` pipeline runs offline: frames are labeled, converted to a YOLO dataset, augmented and used to train a model that annotates the combustion videos used by the database and the app.
 
-### Frontend (`src/`, `public/`, `index.html`)
+### Components
 
-React 19 + Vite application styled with Tailwind CSS 4. 3D scenes use `three`, `@react-three/fiber` and `@react-three/drei`; charts use Recharts. Each tab has its own folder under `src/pages/` (see [`src/README.md`](src/README.md)).
+**Frontend (`src/`, `public/`, `index.html`).** React 19 + Vite application styled with Tailwind CSS 4. 3D scenes use `three`, `@react-three/fiber` and `@react-three/drei`; charts use Recharts. Each tab has its own folder under `src/pages/` (see [`src/README.md`](src/README.md)).
 
-The catalog loader tries, in order: the FastAPI backend (`VITE_API_URL`, default `http://localhost:8000`), then `contracts/data/catalogo_limpio.json`, then `contracts/data/mock_catalogo.json`. The frontend therefore keeps working even if the backend is not running.
+**Backend (`backend/`).** `motor_psi_ollama.py` classifies and indexes the catalog and raw files, `api.py` exposes the search through FastAPI, and `nube.py` builds an interactive knowledge graph of the indexed documents.
 
-### Backend (`backend/`)
+**Data contracts (`contracts/`).** `schema.py` and `types.ts` define the shared investigation format, so frontend and backend evolve in a coordinated way.
 
-- `motor_psi_ollama.py` classifies and indexes the PSI catalog and raw data files into a SQLite database using a closed taxonomy of tags (PSI IDs, project type, safety pillar, hardware rack, fuel phase, fuels, sensors, gravity and atmosphere regimes, flame phenomena). It runs a hybrid query over that index and returns the most relevant files and experiments.
-- `api.py` exposes the search through FastAPI.
-- `nube.py` builds an interactive knowledge graph of the indexed documents.
-
-### Data contracts (`contracts/`)
-
-`schema.py` and `types.ts` define the shared investigation format, so frontend and backend evolve in a coordinated way.
-
-### Computer vision (`entrenamiento_yolo/`)
-
-An offline pipeline to train a custom YOLO model that automatically annotates combustion videos. The processed results are used to enrich the database (for example, the YOLO-annotated PSI-69 video shown in the app). See [Training the YOLO Model](#training-the-yolo-model).
+**Computer vision (`entrenamiento_yolo/`).** Offline pipeline to train a custom YOLO model. See [Training the YOLO Model](#training-the-yolo-model).
 
 ## Requirements
 
@@ -259,17 +318,34 @@ The `entrenamiento_yolo` folder contains the pipeline used to train a new model 
 
 ## Notes
 
+- **Exploration-atmosphere flag:** a cabin is flagged when O₂ ≥ 30% **or** pressure ≤ 10.2 psi, since either condition takes it out of the Earth-normal regime (21% O₂, 14.7 psi). NASA's recommended exploration atmosphere is 34% O₂ at 8.2 psi; the EVA suit uses 100% O₂ at 4.3 psi.
+- **Hardware racks:** CIR (ACME gaseous flames, MDCA liquid droplets) and MSG (SPICE forced-flow duct).
+- **Partial gravity:** bounded through 0g ISS data, 1g ground references and ACME E-FIELD electric-field proxies (awaiting LUCI and FM2).
 - Large NASA PSI data files and videos are not stored in this repository.
 - The simulator is a decision-support tool for exploration and comparison, not a replacement for certified fire-safety analysis.
 
 ## Authors
 
-| Name | LinkedIn |
-|---|---|
-| **Belén Corvillo Guerra** | [belen-corvillo-guerra](https://www.linkedin.com/in/belen-corvillo-guerra/) |
-| **Eduardo Ugarte Álvarez** | [eduardo-ugarte-álvarez](https://www.linkedin.com/in/eduardo-ugarte-%C3%A1lvarez-637906334/) |
-| **Mario Rodríguez Barrera** | [mario-rod-barrera](https://www.linkedin.com/in/mario-rod-barrera/) |
-| **Víctor Gil Ferrer** | [víctor-gil-ferrer](https://www.linkedin.com/in/v%C3%ADctor-gil-ferrer-43baa3394/) |
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <b>Belén Corvillo Guerra</b><br>
+      <a href="https://www.linkedin.com/in/belen-corvillo-guerra/"><img src="docs/assets/linkedin.svg" width="28" alt="LinkedIn"></a>
+    </td>
+    <td align="center" width="25%">
+      <b>Eduardo Ugarte Álvarez</b><br>
+      <a href="https://www.linkedin.com/in/eduardo-ugarte-%C3%A1lvarez-637906334/"><img src="docs/assets/linkedin.svg" width="28" alt="LinkedIn"></a>
+    </td>
+    <td align="center" width="25%">
+      <b>Mario Rodríguez Barrera</b><br>
+      <a href="https://www.linkedin.com/in/mario-rod-barrera/"><img src="docs/assets/linkedin.svg" width="28" alt="LinkedIn"></a>
+    </td>
+    <td align="center" width="25%">
+      <b>Víctor Gil Ferrer</b><br>
+      <a href="https://www.linkedin.com/in/v%C3%ADctor-gil-ferrer-43baa3394/"><img src="docs/assets/linkedin.svg" width="28" alt="LinkedIn"></a>
+    </td>
+  </tr>
+</table>
 
 Project repository: [belencorvillo/IGNIS-SI](https://github.com/belencorvillo/IGNIS-SI)
 
@@ -280,3 +356,7 @@ Experiment data comes from NASA's **Physical Sciences Informatics (PSI)** databa
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details. NASA PSI data remains subject to its own terms of use.
+
+<br>
+
+<p align="center"><a href="#readme-top"><b>⬆ Back to top</b></a></p>
