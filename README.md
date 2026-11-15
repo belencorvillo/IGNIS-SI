@@ -6,7 +6,7 @@
 
 # IGNIS-SI
 
-***Explore NASA's microgravity combustion experiments in minutes, not weeks.***
+**Explore NASA's microgravity combustion experiments in minutes, not weeks.**
 
 <br>
 
@@ -19,7 +19,7 @@
 [![Ollama](https://img.shields.io/badge/Ollama-qwen2.5-000000?style=flat-square&logo=ollama&logoColor=white)](https://ollama.com/)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![YOLO](https://img.shields.io/badge/YOLO-Ultralytics-00FFFF?style=flat-square&logo=yolo&logoColor=black)](https://docs.ultralytics.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue?style=flat-square)](LICENSE)
 
 <br>
 
@@ -61,7 +61,7 @@ Users change experiment variables (gravity level, atmosphere, oxygen concentrati
   </tr>
   <tr>
     <td align="center"><sub>3D flame and environment controls</sub></td>
-    <td align="center"><sub>Mars habitat simulator and evironment controls</sub></td>
+    <td align="center"><sub>Matching experiments and partial-gravity chart</sub></td>
   </tr>
 </table>
 
@@ -76,7 +76,7 @@ A locally run LLM with **Ollama**, working over a structured **SQLite** database
   </tr>
   <tr>
     <td align="center"><sub>Natural-language search and filters</sub></td>
-    <td align="center"><sub>Data downloader section</sub></td>
+    <td align="center"><sub>Investigation details and comparison</sub></td>
   </tr>
 </table>
 
@@ -90,10 +90,12 @@ Links current microgravity combustion studies to future research on next-generat
     <td width="50%"><img src="docs/screenshots/applications-2.jpeg" alt="Applications: fire safety on Earth"></td>
   </tr>
   <tr>
+    <td align="center"><sub>Fire safety for lunar and Martian bases</sub></td>
     <td align="center"><sub>Applications on Earth</sub></td>
-    <td align="center"><sub>Real-world use case</sub></td>
   </tr>
 </table>
+
+<p align="right"><a href="#readme-top">⬆ Back to top</a></p>
 
 ## Demo
 
@@ -316,6 +318,9 @@ The `entrenamiento_yolo` folder contains the pipeline used to train a new model 
 
 ## Notes
 
+- **Exploration-atmosphere flag:** a cabin is flagged when O₂ ≥ 30% **or** pressure ≤ 10.2 psi, since either condition takes it out of the Earth-normal regime (21% O₂, 14.7 psi). NASA's recommended exploration atmosphere is 34% O₂ at 8.2 psi; the EVA suit uses 100% O₂ at 4.3 psi.
+- **Hardware racks:** CIR (ACME gaseous flames, MDCA liquid droplets) and MSG (SPICE forced-flow duct).
+- **Partial gravity:** bounded through 0g ISS data, 1g ground references and ACME E-FIELD electric-field proxies (awaiting LUCI and FM2).
 - Large NASA PSI data files and videos are not stored in this repository.
 - The simulator is a decision-support tool for exploration and comparison, not a replacement for certified fire-safety analysis.
 
@@ -342,14 +347,14 @@ The `entrenamiento_yolo` folder contains the pipeline used to train a new model 
   </tr>
 </table>
 
+Project repository: [belencorvillo/IGNIS-SI](https://github.com/belencorvillo/IGNIS-SI)
+
 ## Acknowledgements
 
 Experiment data comes from NASA's **Physical Sciences Informatics (PSI)** database. Please cite each investigation with its DOI, as shown in the app ("Cite data").
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details. NASA PSI data remains subject to its own terms of use.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See the [LICENSE](LICENSE) file for details.
 
-<br>
-
-<p align="center"><a href="#readme-top"><b> Back to top</b></a></p>
+It uses [Ultralytics YOLO](https://github.com/ultralytics/ultralytics), which is also released under AGPL-3.0, so the whole project is published under the same license. NASA PSI data remains subject to its own terms of use.
