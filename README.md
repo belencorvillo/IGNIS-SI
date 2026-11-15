@@ -259,9 +259,6 @@ The `entrenamiento_yolo` folder contains the pipeline used to train a new model 
 
 ## Notes
 
-- **Exploration-atmosphere flag:** a cabin is flagged when O₂ ≥ 30% **or** pressure ≤ 10.2 psi, since either condition takes it out of the Earth-normal regime (21% O₂, 14.7 psi). NASA's recommended exploration atmosphere is 34% O₂ at 8.2 psi; the EVA suit uses 100% O₂ at 4.3 psi.
-- **Hardware racks:** CIR (ACME gaseous flames, MDCA liquid droplets) and MSG (SPICE forced-flow duct).
-- **Partial gravity:** bounded through 0g ISS data, 1g ground references and ACME E-FIELD electric-field proxies (awaiting LUCI and FM2).
 - Large NASA PSI data files and videos are not stored in this repository.
 - The simulator is a decision-support tool for exploration and comparison, not a replacement for certified fire-safety analysis.
 
