@@ -345,8 +345,6 @@ The `entrenamiento_yolo` folder contains the pipeline used to train a new model 
   </tr>
 </table>
 
-Project repository: [belencorvillo/IGNIS-SI](https://github.com/belencorvillo/IGNIS-SI)
-
 ## Acknowledgements
 
 Experiment data comes from NASA's **Physical Sciences Informatics (PSI)** database. Please cite each investigation with its DOI, as shown in the app ("Cite data").
@@ -357,4 +355,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 <br>
 
-<p align="center"><a href="#readme-top"><b>⬆ Back to top</b></a></p>
+<p align="center"><a href="#readme-top"><b> Back to top</b></a></p>
