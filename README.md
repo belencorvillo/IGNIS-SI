@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="docs/assets/ignis-si-banner.jpg" alt="IGNIS-SI" width="560">
+<img src="docs/assets/ignis_si.jpeg" alt="IGNIS-SI" width="560">
 
 <br><br>
 
