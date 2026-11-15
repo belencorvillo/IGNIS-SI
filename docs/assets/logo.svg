@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="IGNIS-SI logo">
+  <defs>
+    <linearGradient id="outer" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ff3d00"/>
+      <stop offset="0.55" stop-color="#ff7a1a"/>
+      <stop offset="1" stop-color="#ffb84d"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#ffb300"/>
+      <stop offset="1" stop-color="#fff3b0"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#141a22"/>
+      <stop offset="1" stop-color="#0b0f14"/>
+    </linearGradient>
+  </defs>
+  <!-- Background disc -->
+  <circle cx="256" cy="256" r="244" fill="url(#bg)" stroke="#2a3441" stroke-width="6"/>
+  <!-- Orbit ring (space / microgravity) -->
+  <ellipse cx="256" cy="300" rx="215" ry="62" fill="none" stroke="#4ea1ff" stroke-opacity="0.55" stroke-width="5" transform="rotate(-18 256 300)"/>
+  <!-- Outer flame -->
+  <path d="M256 62 C292 132 372 176 372 290 C372 366 320 424 256 424 C192 424 140 366 140 290 C140 242 170 208 190 182 C196 216 214 234 234 228 C224 168 238 108 256 62 Z" fill="url(#outer)"/>
+  <!-- Inner flame -->
+  <path d="M256 222 C276 262 314 282 314 332 C314 372 288 398 256 398 C224 398 198 372 198 332 C198 306 212 290 224 274 C230 294 242 304 252 300 C248 272 250 246 256 222 Z" fill="url(#inner)"/>
+  <!-- Orbit front arc + satellite dot -->
+  <path d="M60 330 C120 384 250 408 370 376" fill="none" stroke="#4ea1ff" stroke-width="5" stroke-linecap="round" transform="rotate(0 256 300)" stroke-opacity="0.9"/>
+  <circle cx="404" cy="214" r="13" fill="#4ea1ff"/>
+</svg>

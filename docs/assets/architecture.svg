@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800" font-family="Segoe UI, Helvetica, Arial, sans-serif" role="img" aria-label="IGNIS-SI architecture diagram">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#aab4c3"/>
+    </marker>
+    <linearGradient id="title" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff7a1a"/>
+      <stop offset="1" stop-color="#ffb84d"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1200" height="800" rx="18" fill="#0d1117"/>
+  <text x="600" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="url(#title)">IGNIS-SI · System Architecture</text>
+
+  <!-- ===== BAND 1 · PRESENTATION ===== -->
+  <rect x="30" y="60" width="1140" height="200" rx="14" fill="#121a24" stroke="#2f5d9a" stroke-width="1.5"/>
+  <text x="50" y="86" font-size="14" font-weight="700" fill="#4ea1ff">PRESENTATION  ·  React 19 + Vite + Tailwind 4 + Three.js</text>
+
+  <g font-size="14" font-weight="700" fill="#e6edf3" text-anchor="middle">
+    <rect x="50"  y="105" width="200" height="62" rx="10" fill="#1a2636" stroke="#4ea1ff"/>
+    <text x="150" y="130">Simulator</text>
+    <text x="150" y="151" font-size="11" font-weight="400" fill="#9fb0c5">3D flame · presets · partial-g chart</text>
+
+    <rect x="265" y="105" width="200" height="62" rx="10" fill="#1a2636" stroke="#4ea1ff"/>
+    <text x="365" y="130">Library</text>
+    <text x="365" y="151" font-size="11" font-weight="400" fill="#9fb0c5">search · compare · 3D graph</text>
+
+    <rect x="480" y="105" width="200" height="62" rx="10" fill="#1a2636" stroke="#4ea1ff"/>
+    <text x="580" y="130">Applications</text>
+    <text x="580" y="151" font-size="11" font-weight="400" fill="#9fb0c5">Moon · Mars · Earth fire safety</text>
+
+    <rect x="695" y="105" width="200" height="62" rx="10" fill="#1a2636" stroke="#4ea1ff"/>
+    <text x="795" y="130">Get data</text>
+    <text x="795" y="151" font-size="11" font-weight="400" fill="#9fb0c5">filter · CSV / JSON export</text>
+
+    <rect x="910" y="105" width="200" height="62" rx="10" fill="#1a2636" stroke="#4ea1ff"/>
+    <text x="1010" y="130">Cite data · About us</text>
+    <text x="1010" y="151" font-size="11" font-weight="400" fill="#9fb0c5">DOI citations · team</text>
+  </g>
+
+  <!-- tabs to loader -->
+  <g stroke="#aab4c3" stroke-width="1.4">
+    <line x1="150" y1="167" x2="150" y2="192"/>
+    <line x1="365" y1="167" x2="365" y2="192"/>
+    <line x1="580" y1="167" x2="580" y2="192"/>
+    <line x1="795" y1="167" x2="795" y2="192"/>
+    <line x1="1010" y1="167" x2="1010" y2="192"/>
+  </g>
+  <rect x="50" y="192" width="1060" height="48" rx="10" fill="#2a1d12" stroke="#ff7a1a"/>
+  <text x="580" y="213" text-anchor="middle" font-size="14" font-weight="700" fill="#ffb84d">src/shared/catalog.js · catalog loader</text>
+  <text x="580" y="231" text-anchor="middle" font-size="11" fill="#d9c3a8">tries: FastAPI backend  →  contracts/data/catalogo_limpio.json  →  mock_catalogo.json</text>
+
+  <!-- ===== BAND 2 · SERVICE ===== -->
+  <rect x="30" y="300" width="1140" height="250" rx="14" fill="#101c18" stroke="#2e8b6a" stroke-width="1.5"/>
+  <text x="1150" y="326" text-anchor="end" font-size="14" font-weight="700" fill="#3ddc97">SERVICE  ·  FastAPI + Ollama (runs locally)</text>
+
+  <g font-size="14" font-weight="700" fill="#e6edf3" text-anchor="middle">
+    <rect x="60" y="345" width="250" height="68" rx="10" fill="#172a24" stroke="#3ddc97" stroke-dasharray="6 4"/>
+    <text x="185" y="372">contracts/data/*.json</text>
+    <text x="185" y="393" font-size="11" font-weight="400" fill="#9fc9b8">clean catalog · mock (fallback)</text>
+
+    <rect x="400" y="345" width="250" height="68" rx="10" fill="#172a24" stroke="#3ddc97"/>
+    <text x="525" y="372">backend/api.py</text>
+    <text x="525" y="393" font-size="11" font-weight="400" fill="#9fc9b8">FastAPI · GET /buscar?q=</text>
+
+    <rect x="740" y="345" width="300" height="68" rx="10" fill="#172a24" stroke="#3ddc97"/>
+    <text x="890" y="372">motor_psi_ollama.py</text>
+    <text x="890" y="393" font-size="11" font-weight="400" fill="#9fc9b8">tag taxonomy · hybrid search</text>
+
+    <rect x="720" y="455" width="190" height="68" rx="10" fill="#172a24" stroke="#3ddc97"/>
+    <text x="815" y="482">Ollama · qwen2.5</text>
+    <text x="815" y="503" font-size="11" font-weight="400" fill="#9fc9b8">local LLM · tagging</text>
+
+    <rect x="930" y="455" width="210" height="68" rx="10" fill="#172a24" stroke="#3ddc97"/>
+    <text x="1035" y="482">SQLite · psi_index.db</text>
+    <text x="1035" y="503" font-size="11" font-weight="400" fill="#9fc9b8">documents · tags · summaries</text>
+  </g>
+
+  <!-- ===== BAND 3 · OFFLINE ===== -->
+  <rect x="30" y="590" width="1140" height="180" rx="14" fill="#1a1426" stroke="#7a5bd0" stroke-width="1.5"/>
+  <text x="50" y="616" font-size="14" font-weight="700" fill="#b48cff">OFFLINE PIPELINES</text>
+
+  <!-- YOLO pipeline -->
+  <text x="60" y="648" font-size="12" font-weight="700" fill="#cdb8ff">entrenamiento_yolo · automatic video annotation</text>
+  <g font-size="13" font-weight="700" fill="#e6edf3" text-anchor="middle">
+    <rect x="60"  y="662" width="130" height="80" rx="10" fill="#241b38" stroke="#b48cff"/>
+    <text x="125" y="690">1 · Label</text>
+    <text x="125" y="709" font-size="11" font-weight="400" fill="#c8b8ee">LabelMe on</text>
+    <text x="125" y="724" font-size="11" font-weight="400" fill="#c8b8ee">video frames</text>
+
+    <rect x="212" y="662" width="130" height="80" rx="10" fill="#241b38" stroke="#b48cff"/>
+    <text x="277" y="690">2 · Dataset</text>
+    <text x="277" y="709" font-size="11" font-weight="400" fill="#c8b8ee">jsons2dataset.py</text>
+    <text x="277" y="724" font-size="11" font-weight="400" fill="#c8b8ee">JSON → YOLO</text>
+
+    <rect x="364" y="662" width="130" height="80" rx="10" fill="#241b38" stroke="#b48cff"/>
+    <text x="429" y="690">3 · Augment</text>
+    <text x="429" y="709" font-size="11" font-weight="400" fill="#c8b8ee">creador_d_copias.py</text>
+    <text x="429" y="724" font-size="11" font-weight="400" fill="#c8b8ee">image copies</text>
+
+    <rect x="516" y="662" width="130" height="80" rx="10" fill="#241b38" stroke="#b48cff"/>
+    <text x="581" y="690">4 · Train</text>
+    <text x="581" y="709" font-size="11" font-weight="400" fill="#c8b8ee">train.py</text>
+    <text x="581" y="724" font-size="11" font-weight="400" fill="#c8b8ee">YOLO → best.pt</text>
+
+    <rect x="668" y="662" width="150" height="80" rx="10" fill="#241b38" stroke="#b48cff"/>
+    <text x="743" y="690">5 · Process videos</text>
+    <text x="743" y="709" font-size="11" font-weight="400" fill="#c8b8ee">video.py</text>
+    <text x="743" y="724" font-size="11" font-weight="400" fill="#c8b8ee">annotated video</text>
+  </g>
+  <g stroke="#aab4c3" stroke-width="1.6" fill="none" marker-end="url(#arr)">
+    <line x1="190" y1="702" x2="210" y2="702"/>
+    <line x1="342" y1="702" x2="362" y2="702"/>
+    <line x1="494" y1="702" x2="514" y2="702"/>
+    <line x1="646" y1="702" x2="666" y2="702"/>
+  </g>
+
+  <!-- NASA PSI data -->
+  <text x="930" y="648" font-size="12" font-weight="700" fill="#cdb8ff">PSI data ingestion</text>
+  <g text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="700">
+    <rect x="930" y="662" width="210" height="80" rx="10" fill="#241b38" stroke="#b48cff"/>
+    <text x="1035" y="690">NASA PSI data</text>
+    <text x="1035" y="709" font-size="11" font-weight="400" fill="#c8b8ee">datos_raw/ + catalogo_limpio.json</text>
+    <text x="1035" y="724" font-size="11" font-weight="400" fill="#c8b8ee">indexed with the CLI</text>
+  </g>
+
+  <!-- ===== ARROWS ===== -->
+  <g stroke="#aab4c3" stroke-width="1.8" fill="none" marker-end="url(#arr)">
+    <!-- loader -> contracts (fallback) -->
+    <line x1="185" y1="240" x2="185" y2="343" stroke-dasharray="6 4"/>
+    <!-- loader -> api -->
+    <line x1="525" y1="240" x2="525" y2="343"/>
+    <!-- api -> motor -->
+    <line x1="650" y1="379" x2="738" y2="379"/>
+  </g>
+  <g stroke="#aab4c3" stroke-width="1.8" fill="none" marker-start="url(#arr)" marker-end="url(#arr)">
+    <!-- motor <-> Ollama -->
+    <line x1="800" y1="413" x2="800" y2="453"/>
+    <!-- motor <-> SQLite -->
+    <line x1="1000" y1="413" x2="1000" y2="453"/>
+  </g>
+  <!-- PSI data -> SQLite -->
+  <line x1="1085" y1="662" x2="1085" y2="525" stroke="#aab4c3" stroke-width="1.8" marker-end="url(#arr)"/>
+
+  <!-- Arrow labels -->
+  <g font-size="11" fill="#9fb0c5">
+    <text x="193" y="296">fallback (static JSON)</text>
+    <text x="533" y="296">REST · JSON</text>
+    <text x="694" y="371" text-anchor="middle">query</text>
+    <text x="808" y="438">tags / answers</text>
+    <text x="1008" y="438">read / write</text>
+    <text x="1093" y="600">index</text>
+  </g>
+
+  <!-- Output note -->
+  <text x="743" y="760" text-anchor="middle" font-size="11" fill="#c8b8ee">annotated videos → public/ and database</text>
+
+  <!-- Legend -->
+  <g font-size="11" fill="#9fb0c5">
+    <line x1="60" y1="787" x2="90" y2="787" stroke="#aab4c3" stroke-width="1.8" marker-end="url(#arr)"/>
+    <text x="98" y="791">data flow</text>
+    <line x1="180" y1="787" x2="210" y2="787" stroke="#aab4c3" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arr)"/>
+    <text x="218" y="791">fallback path</text>
+  </g>
+</svg>
