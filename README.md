@@ -6,7 +6,7 @@
 
 # IGNIS-SI
 
-**Explore NASA's microgravity combustion experiments in minutes, not weeks.**
+***Explore NASA's microgravity combustion experiments in minutes, not weeks.***
 
 <br>
 
@@ -61,7 +61,7 @@ Users change experiment variables (gravity level, atmosphere, oxygen concentrati
   </tr>
   <tr>
     <td align="center"><sub>3D flame and environment controls</sub></td>
-    <td align="center"><sub>Matching experiments and partial-gravity chart</sub></td>
+    <td align="center"><sub>Mars habitat simulatpr and evironment controls</sub></td>
   </tr>
 </table>
 
@@ -76,7 +76,7 @@ A locally run LLM with **Ollama**, working over a structured **SQLite** database
   </tr>
   <tr>
     <td align="center"><sub>Natural-language search and filters</sub></td>
-    <td align="center"><sub>Investigation details and comparison</sub></td>
+    <td align="center"><sub>Data downloader section</sub></td>
   </tr>
 </table>
 
@@ -90,8 +90,8 @@ Links current microgravity combustion studies to future research on next-generat
     <td width="50%"><img src="docs/screenshots/applications-2.jpeg" alt="Applications: fire safety on Earth"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Fire safety for lunar and Martian bases</sub></td>
     <td align="center"><sub>Applications on Earth</sub></td>
+    <td align="center"><sub>Real-world use case</sub></td>
   </tr>
 </table>
 
