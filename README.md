@@ -48,7 +48,7 @@ IGNIS-SI brings that knowledge together in one place, so the evidence behind fir
 
 ## Project Summary
 
-IGNIS-SI is a web application that turns NASA's PSI microgravity combustion experiments into something a mission planner can explore in minutes instead of weeks. Since the data is hard to find, hard to compare and hard to interpret, IGNIS-SI offers three connected tools.
+IGNIS-SI is a web application that turns NASA's PSI microgravity combustion experiments into something a mission planner can explore in minutes instead of weeks. Since the data is hard to find, hard to compare and hard to interpret, IGNIS-SI offers three connected tools:
 
 ### 1. Interactive, animated simulator
 
@@ -341,8 +341,6 @@ The `entrenamiento_yolo` folder contains the pipeline used to train a new model 
     </td>
   </tr>
 </table>
-
-Project repository: [belencorvillo/IGNIS-SI](https://github.com/belencorvillo/IGNIS-SI)
 
 ## Acknowledgements
 
