@@ -6,7 +6,7 @@
 
 # IGNIS-SI
 
-**Explore NASA's microgravity combustion experiments in minutes, not weeks.**
+***Explore NASA's microgravity combustion experiments in minutes, not weeks.***
 
 <br>
 
