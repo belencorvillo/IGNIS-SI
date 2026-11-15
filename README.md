@@ -97,12 +97,11 @@ Links current microgravity combustion studies to future research on next-generat
 
 ## Demo
 
-<!-- Replace with your video:
-[![Watch the demo](docs/screenshots/demo-thumbnail.png)](https://youtu.be/XXXXXXXXXXX)
-> Click the image to open the demo.
--->
+A video demonstration of the system is available here:
 
-A demo video will be linked here.
+[![Watch the demo](https://img.youtube.com/vi/vtBwrnJ0Lkw/maxresdefault.jpg)](https://youtu.be/vtBwrnJ0Lkw)
+
+> Click the image to open the YouTube demo.
 
 ## Main Features
 
