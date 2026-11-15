@@ -95,8 +95,6 @@ Links current microgravity combustion studies to future research on next-generat
   </tr>
 </table>
 
-<p align="right"><a href="#readme-top">⬆ Back to top</a></p>
-
 ## Demo
 
 <!-- Replace with your video:
