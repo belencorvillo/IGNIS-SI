@@ -2,9 +2,9 @@
 
 <div align="center">
 
-<img src="docs/assets/logo.svg" alt="IGNIS-SI logo" width="160">
+<img src="docs/assets/ignis-si-banner.jpg" alt="IGNIS-SI" width="560">
 
-# IGNIS-SI
+<br><br>
 
 ***Explore NASA's microgravity combustion experiments in minutes, not weeks.***
 
