@@ -61,7 +61,7 @@ Users change experiment variables (gravity level, atmosphere, oxygen concentrati
   </tr>
   <tr>
     <td align="center"><sub>3D flame and environment controls</sub></td>
-    <td align="center"><sub>Mars habitat simulatpr and evironment controls</sub></td>
+    <td align="center"><sub>Mars habitat simulator and evironment controls</sub></td>
   </tr>
 </table>
 
