@@ -95,8 +95,6 @@ Links current microgravity combustion studies to future research on next-generat
   </tr>
 </table>
 
-<p align="right"><a href="#readme-top">⬆ Back to top</a></p>
-
 ## Demo
 
 <!-- Replace with your video:
@@ -358,3 +356,5 @@ Experiment data comes from NASA's **Physical Sciences Informatics (PSI)** databa
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See the [LICENSE](LICENSE) file for details.
 
 It uses [Ultralytics YOLO](https://github.com/ultralytics/ultralytics), which is also released under AGPL-3.0, so the whole project is published under the same license. NASA PSI data remains subject to its own terms of use.
+
+<p align="right"><a href="#readme-top"> Back to top</a></p>
