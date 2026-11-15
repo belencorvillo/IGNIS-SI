@@ -1,0 +1,5 @@
+train: images/train
+val: images/val
+
+nc: 4
+names: ['raw_fuel', 'flame', 'burning_fuel', 'fuel_residue']
