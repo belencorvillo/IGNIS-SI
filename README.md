@@ -8,7 +8,8 @@
 
 ***Explore NASA's microgravity combustion experiments in minutes, not weeks.***
 
-<br>
+**[🌐 Try the live website →](https://belencorvillo.github.io/ignis-si-web/)**<br>
+<sub>Everything works online except the SI search, which needs a local Ollama model.</sub>
 
 [![React](https://img.shields.io/badge/React-19-20232A?style=flat-square&logo=react&logoColor=61DAFB)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
